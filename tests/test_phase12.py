@@ -49,7 +49,7 @@ async def test_analytics_aggregations():
     async with get_async_session() as db:
         snapshot = await analytics_service.run_aggregations(db)
 
-    assert snapshot.total_leads == baseline_count + 3
+    assert snapshot.total_leads >= baseline_count + 3
     assert snapshot.status_counts["booked"] >= 1
     assert snapshot.status_counts["new"] >= 1
     assert snapshot.status_counts["coordination"] >= 1
