@@ -1,15 +1,11 @@
 import uuid
-from datetime import datetime, timedelta, timezone
 
-import jwt
-import pytest
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import JWT_ALGORITHM, JWT_SECRET
 from app.core.exceptions import LHQException
 from app.db.session import get_db
 from app.main import app
-from tests.conftest import create_test_token, get_auth_headers
+from tests.conftest import get_auth_headers
 
 
 def _inquiry_payload():
@@ -124,11 +120,7 @@ def test_workflow_lhq_exception_maps_to_400(monkeypatch):
     try:
         with TestClient(app) as client:
             headers = get_auth_headers("ops")
-            response = client.post(
-                f"/api/v1/leads/{uuid.uuid4()}/transition",
-                params={"new_state": "ready", "trigger": "pytest"},
-                headers=headers
-            )
+            response = client.post(f"/api/v1/leads/{uuid.uuid4()}/transition", params={"new_state": "ready", "trigger": "pytest"}, headers=headers)
             assert response.status_code == 400
             assert response.json()["detail"] == "workflow failure"
     finally:
@@ -157,11 +149,7 @@ def test_workflow_unhandled_exception_maps_to_500(monkeypatch):
     try:
         with TestClient(app) as client:
             headers = get_auth_headers("ops")
-            response = client.post(
-                f"/api/v1/leads/{uuid.uuid4()}/transition",
-                params={"new_state": "ready", "trigger": "pytest"},
-                headers=headers
-            )
+            response = client.post(f"/api/v1/leads/{uuid.uuid4()}/transition", params={"new_state": "ready", "trigger": "pytest"}, headers=headers)
             assert response.status_code == 500
             assert response.json()["detail"] == "Internal server error during transition"
     finally:

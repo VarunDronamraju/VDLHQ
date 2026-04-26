@@ -1,11 +1,8 @@
 import uuid
-from datetime import datetime, timedelta, timezone
 
-import jwt
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.api.dependencies import JWT_ALGORITHM, JWT_SECRET
 from app.db.session import get_async_session
 from app.main import app
 from app.models.core import Booking, Client, Lead, LeadStatus, Location, Permit

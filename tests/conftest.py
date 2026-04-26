@@ -9,11 +9,12 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from app.api.dependencies import JWT_ALGORITHM, JWT_SECRET
+from app.api.dependencies import JWT_ALGORITHM, JWT_SECRET  # noqa: E402
 
 
 def create_test_token(user_id: str, role: str, client_id: str = None):
     from datetime import datetime, timedelta, timezone
+
     payload = {
         "sub": user_id,
         "role": role,
