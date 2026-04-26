@@ -1744,8 +1744,9 @@ No auth wired yet — add role checks in Phase 14.
 **Git commit:** `feat: client + ops read/write endpoints, internal retry`
 
 ---
-
-## PHASE 11 — A4 PermitService
+## PHASE 10 — Client & Ops Dashboards [COMPLETED]
+---
+## PHASE 11 — A4 PermitService [COMPLETED]
 
 ```
 generate_checklist(booking_id, shoot_type, location, duration)

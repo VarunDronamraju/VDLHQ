@@ -81,6 +81,7 @@ class LeadAction(BaseModel):
     target_state: str
     actor: str = "ops"
     trigger: str = "manual_action"
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class PermitBrief(BaseModel):

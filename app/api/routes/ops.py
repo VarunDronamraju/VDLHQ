@@ -1,14 +1,16 @@
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.schemas.lead import AnalyticsSnapshot, BookingDetail, LeadAction, LeadBrief, LeadDetail, PermitUpdate
 from app.db.session import get_db
-from app.models.core import Booking, Lead, LeadStatus, Permit
+from app.models.core import Booking, Lead, LeadStatus
+from app.pipelines.booking_pipeline import run_booking_pipeline
+from app.services.ai.permit_service import permit_service
 from app.services.core.workflow_engine import WorkflowEngine
 
 router = APIRouter()
@@ -54,6 +56,7 @@ async def get_lead_detail_ops(
 async def lead_action(
     lead_id: UUID,
     body: LeadAction,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -61,7 +64,14 @@ async def lead_action(
     """
     engine = WorkflowEngine(db)
     try:
-        await engine.transition(lead_id=lead_id, target_state=body.target_state, trigger=body.trigger, actor=body.actor)
+        result = await engine.transition(lead_id=lead_id, target_state=body.target_state, trigger=body.trigger, actor=body.actor, metadata=body.metadata)
+
+        # If transitioning to booked, trigger booking pipeline (A4)
+        if body.target_state == "booked" and result.get("metadata"):
+            booking_id = result["metadata"].get("booking_id")
+            if booking_id:
+                background_tasks.add_task(run_booking_pipeline, lead_id, UUID(booking_id))
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -108,20 +118,32 @@ async def update_permit_status_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Update permit status (Stub for A4 integration in Phase 11).
+    Update permit status and trigger lead state transitions.
     """
-    result = await db.execute(select(Permit).where(Permit.id == permit_id, Permit.booking_id == booking_id))
-    permit = result.scalar_one_or_none()
+    try:
+        await permit_service.update_permit_status(permit_id=permit_id, new_status=body.status, notes=body.rejection_notes, db=db)
 
-    if not permit:
-        raise HTTPException(status_code=404, detail="Permit not found")
+        # 2. Trigger WorkflowEngine transition based on permit status
+        engine = WorkflowEngine(db)
 
-    permit.status = body.status
-    if body.rejection_notes:
-        permit.rejection_notes = body.rejection_notes
+        # We need the lead_id from the booking
+        booking = await db.get(Booking, booking_id)
+        lead_id = booking.lead_id
 
-    await db.commit()
-    return {"status": "updated", "permit_id": str(permit_id)}
+        status_to_state = {"submitted": "permit_submitted", "in_review": "permit_in_review", "approved": "permit_approved", "rejected": "permit_rejected", "pending": "permit_pending"}
+
+        target_state = status_to_state.get(body.status)
+        if target_state:
+            await engine.transition(lead_id=lead_id, target_state=target_state, trigger="permit_update", actor="ops")
+
+            # Special case: if approved, move to coordination automatically
+            if target_state == "permit_approved":
+                await engine.transition(lead_id=lead_id, target_state="coordination", trigger="permit_approved_auto", actor="system")
+
+        return {"status": "updated", "permit_id": str(permit_id), "lead_state": target_state}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/analytics", response_model=AnalyticsSnapshot)

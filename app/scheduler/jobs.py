@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app.core.error_logger import log_system_error
 from app.core.exceptions import InvalidTransition
 from app.db.session import get_async_session
-from app.models.core import Client, Lead, LeadStatus
+from app.models.core import Booking, Client, Lead, LeadStatus, Permit
 from app.services.ai import communication_service
 from app.services.core.workflow_engine import WorkflowEngine
 
@@ -100,8 +100,48 @@ async def scan_followup_leads():
 
 
 async def run_permit_reminders():
-    """Stub for Phase 11"""
-    logger.info("job_stub", job="run_permit_reminders")
+    """
+    Daily. Scans permits in 'pending', 'submitted', or 'in_review'
+    that are past their expected_approval_days.
+    """
+    logger.info("job_start", job="run_permit_reminders")
+    async with get_async_session() as db:
+        # 1. Fetch active permits with their booking and client
+        stmt = (
+            select(Permit, Booking, Client)
+            .join(Booking, Permit.booking_id == Booking.id)
+            .join(Client, Booking.client_id == Client.id)
+            .filter(Permit.status.in_(["pending", "submitted", "in_review"]))
+        )
+        result = await db.execute(stmt)
+        for permit, booking, client in result.all():
+            try:
+                # 2. Check if overdue
+                # expected_approval_days defaults to 3 if missing
+                expected_days = permit.checklist.get("expected_approval_days", 3)
+                if isinstance(expected_days, str):
+                    expected_days = int(expected_days)
+
+                threshold = permit.updated_at + timedelta(days=expected_days)
+                if datetime.now(timezone.utc) > threshold:
+                    # 3. Notify via A5
+                    await communication_service.send(
+                        template_name="permit_reminder",
+                        template_data={"client_name": client.name, "permit_type": permit.permit_type, "status": permit.status, "email": client.email, "booking_id": str(booking.id)},
+                        channel="email",
+                        db=db,
+                        booking_id=booking.id,
+                        rewrite=True,
+                    )
+
+                    # Update updated_at to prevent spamming reminders every run if it runs often
+                    # (though it's a daily cron, so it's fine)
+                    permit.updated_at = datetime.now(timezone.utc)
+                    await db.commit()
+            except Exception as e:
+                await log_system_error(db, "run_permit_reminders", booking.lead_id, e)
+
+    logger.info("job_complete", job="run_permit_reminders")
 
 
 async def run_nurturing_runner():

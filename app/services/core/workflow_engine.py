@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import InvalidTransition, LeadNotFound
-from app.models.core import Lead, LeadStatus, WorkflowState
+from app.models.core import Booking, Lead, LeadStatus, WorkflowState
 
 ALLOWED_TRANSITIONS = {
     "new": ["needs_info", "ready"],
@@ -56,8 +56,26 @@ class WorkflowEngine:
             target_state = "manual_review"
             target_status = LeadStatus.manual_review
 
+        # 1. State logic
         lead.status = target_status
         lead.updated_at = func.now()
+
+        # 2. Side-effects (Downstream actions per Agent.md)
+        if target_state == "booked":
+            if not metadata or "location_id" not in metadata:
+                raise InvalidTransition(current_state, target_state)
+
+            # Create booking record
+            booking = Booking(
+                lead_id=lead_id,
+                client_id=lead.client_id,
+                location_id=UUID(metadata["location_id"]) if isinstance(metadata["location_id"], str) else metadata["location_id"],
+                status="confirmed",
+            )
+            self.db.add(booking)
+            await self.db.flush()  # Get booking ID
+            if metadata:
+                metadata["booking_id"] = str(booking.id)
 
         if target_state == "needs_clarification":
             lead.clarification_count += 1
@@ -65,10 +83,11 @@ class WorkflowEngine:
         if current_state == "manual_review" and target_state == "ready":
             lead.clarification_count = 0
 
+        # 3. Audit trail
         workflow_entry = WorkflowState(lead_id=lead_id, previous_state=current_state, new_state=target_state, trigger=trigger, actor=actor)
 
         self.db.add(workflow_entry)
         await self.db.commit()
         await self.db.refresh(lead)
 
-        return {"lead_id": str(lead_id), "previous_state": current_state, "new_state": target_state, "trigger": trigger}
+        return {"lead_id": str(lead_id), "previous_state": current_state, "new_state": target_state, "trigger": trigger, "metadata": metadata}
