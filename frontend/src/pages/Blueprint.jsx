@@ -178,6 +178,8 @@ const Blueprint = () => {
                 </div>
               </div>
             </div>
+          </section>
+
           {/* Section: Context Visibility (Static Reference) */}
           <section className="space-y-8">
             <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.4em] flex items-center gap-3">
