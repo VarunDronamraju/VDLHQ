@@ -1,0 +1,304 @@
+LocationHQ What is LocationHQ?
+A location marketplace and operations layer for film, advertising, and media shoots.
+Connects production houses ↔ location owners.
+Handles:
+Location discovery
+Booking coordination
+Shoot logistics: permits, communication, approvals
+Business Model
+Value Layers
+Layer
+Description
+Supply
+Onboarding and managing locations
+Demand
+Acquiring production inquiries
+Ops
+Coordinating bookings, permits, communication
+
+Revenue Types
+Commission per booking (primary)
+Location listing / onboarding fees (optional)
+Add-on services: permit assistance, logistics coordination, production support
+
+
+
+Strengths and Weaknesses
+Strengths
+High-intent demand (paid productions)
+Fragmented supply (aggregation advantage)
+Repeat usage potential (production reuse)
+Natural upsell into services (permits, ops)
+Strong positioning if moved toward a workflow operating system
+Weaknesses
+Operations-heavy with manual coordination
+Not easily scalable in current form
+High dependency on people instead of systems
+Inconsistent client experience due to manual handling
+Risk of inefficiency as volume increases
+Area-wise Audit
+Area
+Current Approach
+Downsides
+Improvement Direction
+Lead Intake
+Calls used for capturing inquiries
+Time-heavy, repeated effort
+Structured digital intake
+Lead Qualification
+Manual evaluation during calls
+Slow, inconsistent filtering
+Basic scoring and categorization
+Lead Tracking
+Informal and ad-hoc tracking
+No pipeline visibility
+Defined lead stages with pipeline
+Website
+Informational, not conversion-driven
+Low inquiry capture
+Inquiry funnel with conversion focus
+Data Handling
+Manual entry and scattered storage
+Errors and duplication
+Centralized structured storage
+Workflow Coordination
+Managed via calls and follow-ups
+No visibility, delays
+Status-based workflow system
+Internal Visibility
+No clear system for tracking work
+Hard to monitor progress
+Internal operations dashboard
+Client Experience
+Call-dependent communication
+Low transparency
+Client dashboard and status view
+Repeated Enquiries
+Same data collected multiple times
+Inefficiency
+Persistent client profiles
+Communication
+Manual messaging
+Missed updates, inconsistency
+Automated human-like notifications
+Permit Handling
+Case-by-case handling
+No standardization
+Checklist-based system
+Analytics
+Minimal tracking of metrics
+No insights
+Basic analytics dashboard
+Partial Leads
+Dropped if not fully converted
+Lost potential clients
+Capture and re-engage leads
+Process Reliability
+Depends on individuals
+Fragile and inconsistent
+System-driven processes
+
+Current State  What We Observed
+Inquiry handling is call-heavy, averaging 10 to 30 minutes per lead
+Lead intake and qualification are entirely manual
+Website is not driving structured inquiries effectively
+No clear lead tracking pipeline exists
+Data is captured inconsistently and stored across multiple places
+Limited visibility into ongoing bookings and their status
+Workflow coordination is manual and unstructured
+Clients depend on calls for updates with no self-serve layer
+Repeated data collection from returning clients
+Communication is ad-hoc with no automated updates
+Permit handling is case-by-case with no standardization
+No structured analytics or performance tracking
+High dependency on individuals instead of systems
+Partial and incomplete enquiries are not captured properly
+No system to re-engage interested but inactive clients
+What We Need to Do
+Reduce dependency on calls for initial inquiries
+Standardize how inquiry data is collected
+Centralize all leads, clients, and booking data
+Define and track lead lifecycle stages
+Improve visibility across all ongoing operations
+Reduce repetitive data collection from clients
+Structure end-to-end workflow from inquiry to booking to permits
+Ensure clear ownership and status at each step
+Make communication consistent and predictable
+Enable partial self-serve experience for clients
+Improve data accuracy and reduce manual errors
+Reuse client data to speed up future interactions
+Use collected data for better decision-making
+Shift from person-dependent to system-driven operations
+Capture partial enquiries as leads
+Re-engage inactive or dropped-off prospects
+
+
+
+Execution Layer
+Features
+F1: Structured inquiry form  primary digital entry point, replaces calls, saves partial submissions
+F2: CRM lead pipeline  tracks all leads across states: new → needs_info → ready → matched → booked → permit_pending → permit_in_review → permit_approved → coordination → closed
+F3: Internal dashboard  ops team view of pipeline health, pending actions, booking status, and permit tracking
+F4: Client dashboard and profile  self-serve status view, reduces inbound calls
+F5: Automated messaging  human-like email and WhatsApp triggered by state changes, reminders, nudges, and inactivity detection
+F6: Reusable client profiles  pre-fills known data on re-inquiry, client confirms instead of re-entering
+F7: Permit lifecycle tracker  generates checklist, initiates permit process, tracks status through pending → submitted → in_review → approved or rejected
+F8: Workflow status tracker  visual pipeline showing stage, owner, last action, next action
+F9: Analytics dashboard  conversion rates, volume, drop-off points, time-to-booking
+F10: AI location recommendation  semantic search over location inventory with ranked shortlist and reasoning
+F11: Partial inquiry capture  saves incomplete submissions as leads in needs_info state
+F12: Follow-up system  scheduled outreach to leads missing required fields within 0 to 72 hours
+F13: Lead nurturing system  long-interval re-engagement for inactive leads at 7 or more days
+
+
+
+
+
+
+
+
+AI Services
+LLM is used at fixed, bounded points only. It never controls flow. It assists interpretation, ranking, and communication.
+A1: IntakeService
+
+
+Parses raw inquiry text into structured fields
+Writes lead record to database
+LLM usage: required
+A2: ReadinessService
+
+
+Scores lead completeness
+Outputs: ready or needs_info, plus a list of missing fields
+LLM usage: required
+A3: MatchingService
+
+
+Embeds client requirements and runs semantic search over location inventory
+LLM ranks and explains shortlist
+If results are poor: one clarification loop allowed  sends one question to client, reprocesses on response
+If still no good match after clarification: C1 moves lead to a fallback state and ops team is notified for manual review
+LLM usage: required
+A4: PermitService
+
+
+Infers permit requirements from shoot type, location, and duration
+Generates structured checklist stored against booking
+Initiates permit process: sets permit status to pending
+Tracks permit lifecycle: pending → submitted → in_review → approved or rejected
+On rejection: notifies ops team and client via A5, flags for manual resolution
+On approval: notifies C1 to advance booking to coordination stage
+C1 sends reminders if permit stays in a stage beyond expected time
+LLM usage: optional, rules-based fallback available
+A5: CommunicationService
+
+
+Single sending layer for all outgoing messages
+Template-first  every state transition maps to a pre-written template
+Also triggered by: reminders (time-based), nudges (inactivity-based), and permit status updates
+LLM optionally rewrites tone and phrasing only, never changes facts, dates, names, or instructions
+If LLM rewrite fails validation, original template is sent
+Never invents facts  data always supplied by WorkflowEngine
+Neither C4 nor A6 send directly  everything routes through A5
+LLM usage: optional (rewrite and tone only)
+A6: NurturingService
+
+
+Long-term re-engagement for leads inactive for 7 or more days
+Cadence and timing are deterministic  rule-based schedule (weekly or biweekly), not decided by LLM
+LLM used only to personalize message content based on client history
+Passes final message to A5 for sending
+LLM usage: optional (personalization only)
+Core Services
+Fully deterministic. No LLM. These own reliability, control, and all state transitions.
+C1: WorkflowEngine
+
+
+Owns and enforces the state machine  no transition happens without it
+Actively triggers downstream services on every state change
+Handles retries: if a service fails, C1 retries with backoff before escalating
+Enforces inactivity rules: detects stale states at needs_info, matched, and permit stages and triggers appropriate action
+Sends time-based reminders and nudges via A5 independently of state changes
+Single source of truth for all system state
+C2: RoutingService
+
+
+If readiness score is ready → queue A3 MatchingService
+If readiness score is needs_info → queue C4 FollowUpService
+Pure conditional logic, no LLM
+C3: ProfileService
+
+
+Manages client records
+On new inquiry, matches by email or phone and pre-fills known fields
+Pure CRUD operations
+C4: FollowUpService
+
+
+Triggers within 0 to 72 hours of a needs_info state
+Rule-based scheduling, no LLM decision-making
+Passes context to A5 CommunicationService for message sending
+Does not send directly
+C5: AnalyticsService
+
+
+Runs SQL aggregations on lead and booking data
+Caches results for dashboard display
+No LLM involved
+
+Workflows
+W1: Inquiry intake Form submit → C3 profile check and pre-fill → A1 intake and structure → A2 readiness score → C2 routing → C1 sets lead state
+
+
+W2: Location matching Lead state is ready → A3 runs semantic search → if good match: shortlist stored, C1 sets state to matched, A5 sends shortlist to client → if poor match: A3 sends one clarification to client via A5, client responds, A3 reruns → if still no match: C1 flags lead for ops team manual review
+
+
+W3: Incomplete inquiry recovery State is needs_info → C4 triggers follow-up within 72 hours → A5 sends targeted message for missing fields only → client updates inquiry → A1 reprocesses → A2 reassesses → if ready: back to W2 → if no response after 7 days: C1 sets state to inactive → A6 picks up
+
+
+W4: Booking and permit lifecycle Client confirms location → C1 sets state to booked → A4 generates permit checklist → A4 sets permit status to pending → ops team submits permits → A4 updates status to submitted → authority reviews → A4 updates status to in_review → if approved: A4 notifies C1, C1 advances to coordination stage, A5 notifies client → if rejected: A4 notifies ops and client via A5, flagged for manual resolution → shoot coordination begins → C1 sets state to closed on completion
+
+
+C1 sends reminders via A5 if permit stays in any stage beyond expected duration
+W5: Communication triggers Triggered by: any state transition by C1 → A5 sends state-change notification Also triggered by: time-based reminders (C1 detects overdue stages) → A5 sends reminder Also triggered by: inactivity detection (C1 detects no client action) → A5 sends nudge Also triggered by: permit status updates from A4 → A5 sends update to client and ops team
+
+
+W6: Client profile reuse New inquiry → C3 matches existing profile → pre-fills form fields → client confirms → A1 processes confirmed data, skips re-collection of known fields
+
+
+W7: Ops dashboard updates All state changes written by C1 → reflected in internal dashboard in real time, no separate sync job needed
+
+
+W8: Issue resolution Complaint logged against lead or booking → assigned to ops owner → C1 tracks status → A5 sends acknowledgment to client
+
+
+W9: Inactive lead nurturing No response after 7 or more days at needs_info or matched stage → C1 sets state to inactive → A6 picks up on weekly schedule → A5 sends re-engagement message → if client responds: state resets, back to W1 → if no response after extended period: C1 sets state to archived
+
+
+System Principles
+C1 WorkflowEngine is the backbone  nothing moves without it
+Core Services own control, reliability, and all state transitions
+AI Services assist where interpretation or personalization is needed
+A5 CommunicationService is the only outgoing message layer
+LLM never controls flow  it only assists decisions and crafts communication
+More than half of this system is deterministic code
+Future Features
+Not in scope for the current build. To be added after the core pipeline is stable and running in production.
+Supply Side
+F14: Location owner portal  owners can submit, edit, and manage their listings independently
+F15: Availability calendar  owners mark blocked dates, productions see real-time availability before inquiring
+LocationInventoryService (Core)  manages listing data, availability status, and location metadata
+Post-Shoot
+F16: Review and feedback capture  productions rate the location, owners rate the production after each shoot
+ReviewService (Core)  stores ratings, flags issues, feeds scores back into MatchingService ranking
+Commercial
+F17: Invoice and commission tracker  tracks commission owed per booking, marks paid or pending
+PaymentService (Core)  pure record-keeping against each booking, no LLM
+Document Management
+F18: Contract and agreement storage  shoot agreements, NDAs, and permission letters attached to each booking
+DocumentService (Core)  stores, versions, and links documents to the relevant booking record
+Document version: 2.1  Workflow corrections applied. Permit lifecycle, matching fallback, non-linear loops, and inactivity paths added. Pre-implementation.
+
+
+
+
