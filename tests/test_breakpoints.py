@@ -1,7 +1,6 @@
 import uuid
 
 import pytest
-from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy import select
 
@@ -50,15 +49,13 @@ def test_missing_required_fields_rejected():
 
 
 @pytest.mark.asyncio
-async def test_db_connection_failure_returns_500(monkeypatch):
-    async def _fail_connection():
-        raise RuntimeError("simulated db down")
+async def test_db_connection_failure_returns_500():
+    class FakeDb:
+        async def execute(self, *args, **kwargs):
+            raise RuntimeError("simulated db down")
 
-    monkeypatch.setattr("app.main.test_connection", _fail_connection)
-
-    with pytest.raises(HTTPException) as exc:
-        await health_check()
-    assert exc.value.status_code == 500
+    result = await health_check(db=FakeDb())
+    assert "error" in result["checks"]["database"]
 
 
 @pytest.mark.asyncio
