@@ -39,23 +39,23 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
-## 🚧 PHASE 4 — C1 WorkflowEngine (CURRENT)
+## 🟢 PHASE 4 — C1 WorkflowEngine (COMPLETED)
 *Target: Centralized state machine. Refer to [lead_State_machine.md](file:///Users/VD/Desktop/LHQ/FIles/lead_State_machine.md).*
 
-- [ ] **Workflow Service**: Implement `WorkflowEngine.transition()` with guards.
-- [ ] **Audit Trail**: Ensure every state change is logged in `workflow_state`.
+- [x] **Workflow Service**: Implement `WorkflowEngine.transition()` with guards.
+- [x] **Audit Trail**: Ensure every state change is logged in `workflow_state`.
 
 ---
 
-## ⚪ PHASE 5 — LLM Client Utility (Groq)
+## 🟢 PHASE 5 — LLM Client Utility (Groq) (COMPLETED)
 *Target: Shared AI infrastructure.*
 
-- [ ] **Groq Client**: Implement `call()` and `call_json()` using `AsyncGroq`.
-- [ ] **Retry Logic**: Implement `tenacity` retries for rate limits.
+- [x] **Groq Client**: Implement `call()` and `call_json()` using `AsyncGroq`.
+- [x] **Retry Logic**: Implement `tenacity` retries for rate limits.
 
 ---
 
-## ⚪ PHASE 6 — Intake Pipeline (A1 + A2 + C2)
+## 🚧 PHASE 6 — Intake Pipeline (A1 + A2 + C2) (CURRENT)
 *Target: Async lead processing. Refer to [Workflow.md](file:///Users/VD/Desktop/LHQ/FIles/Workflow.md).*
 
 - [ ] **A1 (Parser)**: Groq-powered extraction to `intake_data`.

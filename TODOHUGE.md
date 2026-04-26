@@ -116,9 +116,9 @@ Build in this order. Each phase has hard dependencies on the previous.
 
 ```
 Phase 1  — Foundation                    ✅ COMPLETE
-Phase 2  — Schema completion (all models)
-Phase 3  — POST /inquiry endpoint
-Phase 4  — C1 WorkflowEngine
+Phase 2  — Schema completion (all models) ✅ COMPLETE
+Phase 3  — POST /inquiry endpoint          ✅ COMPLETE
+Phase 4  — C1 WorkflowEngine               ✅ COMPLETE
 Phase 5  — LLM client utility (Groq)
 Phase 6  — Intake pipeline (A1 + A2 + C2 + BackgroundTask)
 Phase 7  — A3 Matching (local embeddings + pgvector)
@@ -156,11 +156,11 @@ Phase 15 — System resilience + observability
 
 ---
 
-## PHASE 2 — Schema Completion (All Models)
+## PHASE 2 — Schema Completion (All Models) ✅ COMPLETE
 
 *All DB models must exist before any service builds on them.*
 
-### Step 2.1 — Correct the Vector Dimension
+### Step 2.1 — Correct the Vector Dimension ✅ COMPLETE
 
 **CRITICAL CORRECTION:** The vector column on `locations` must be `Vector(384)` not `Vector(1536)`.
 
@@ -182,7 +182,7 @@ class Location(Base):
     created_at   = Column(TIMESTAMPTZ, nullable=False, server_default=func.now())
 ```
 
-### Step 2.2 — Add Remaining Models
+### Step 2.2 — Add Remaining Models ✅ COMPLETE
 
 **Files to create:**
 ```
@@ -259,7 +259,7 @@ alembic revision --autogenerate -m "add_remaining_models_384_vector"
 alembic upgrade head
 ```
 
-### Step 2.4 — Enable pgvector + Create Index
+### Step 2.4 — Enable pgvector + Create Index ✅ COMPLETE
 
 ```sql
 -- Run once on Neon if not already present
@@ -272,7 +272,7 @@ CREATE INDEX idx_locations_embedding ON locations
     WITH (lists = 50);
 ```
 
-### Verification
+### Verification ✅ COMPLETE
 
 ```sql
 -- Confirm all 8 tables exist
@@ -293,11 +293,11 @@ VALUES ('Test Location', 'industrial', 'Mumbai', true);
 
 ---
 
-## PHASE 3 — POST /inquiry Endpoint
+## PHASE 3 — POST /inquiry Endpoint ✅ COMPLETE
 
 *Client + Lead creation, initial WorkflowState. No auth yet. No pipeline yet.*
 
-### Step 3.1 — Schemas
+### Step 3.1 — Schemas ✅ COMPLETE
 
 **File:** `app/api/schemas/intake.py`
 
@@ -348,7 +348,7 @@ class InquiryResponse(BaseModel):
     message: str
 ```
 
-### Step 3.2 — Route
+### Step 3.2 — Route ✅ COMPLETE
 
 **File:** `app/api/routes/intake.py`
 
@@ -439,7 +439,7 @@ async def submit_inquiry(
     )
 ```
 
-### Step 3.3 — Register Router
+### Step 3.3 — Register Router ✅ COMPLETE
 
 ```python
 # app/main.py
@@ -447,7 +447,7 @@ from app.api.routes.intake import router as intake_router
 app.include_router(intake_router)
 ```
 
-### Verification
+### Verification ✅ COMPLETE
 
 ```bash
 # Full payload
@@ -487,11 +487,11 @@ SELECT * FROM workflow_state ORDER BY created_at DESC LIMIT 1;
 
 ---
 
-## PHASE 4 — C1 WorkflowEngine
+## PHASE 4 — C1 WorkflowEngine ✅ COMPLETE
 
 *State machine. All subsequent phases depend on this. Build before any pipeline.*
 
-### Step 4.1 — Custom Exceptions
+### Step 4.1 — Custom Exceptions ✅ COMPLETE
 
 **File:** `app/core/exceptions.py`
 
@@ -510,7 +510,7 @@ class ReadinessFailure(Exception): ...
 class MatchingFailure(Exception): ...
 ```
 
-### Step 4.2 — WorkflowEngine
+### Step 4.2 — WorkflowEngine ✅ COMPLETE
 
 **File:** `app/services/core/workflow_engine.py`
 
@@ -619,7 +619,7 @@ class WorkflowEngine:
         return lead
 ```
 
-### Verification
+### Verification ✅ COMPLETE
 
 ```python
 # Unit tests — run these before moving to Phase 5
