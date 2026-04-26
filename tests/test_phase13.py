@@ -80,6 +80,32 @@ async def test_nurturing_service_fallback(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_nurturing_service_empty_response_fallback(monkeypatch):
+    async def mock_call_empty(*args, **kwargs):
+        return ""
+
+    monkeypatch.setattr("app.services.ai.llm_client.call", mock_call_empty)
+
+    async with get_async_session() as db:
+        c = Client(name="Empty Response Client", email=f"empty_{uuid.uuid4().hex}@test.com")
+        db.add(c)
+        await db.flush()
+
+        lead = Lead(client_id=c.id, status=LeadStatus.inactive, intake_data={"shoot_type": "documentary"})
+        db.add(lead)
+        await db.commit()
+        lead_id = lead.id
+
+    async with get_async_session() as db:
+        res = await nurturing_service.generate(lead_id, db)
+
+    assert res["body"].strip() != ""
+    assert "recently added several new locations" in res["body"]
+    assert "Empty Response Client" in res["body"]
+    assert res["subject"] == "Checking in regarding your documentary inquiry"
+
+
+@pytest.mark.asyncio
 async def test_scan_followup_job_deduplication(monkeypatch):
     send_count = 0
 

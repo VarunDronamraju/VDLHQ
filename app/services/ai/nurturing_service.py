@@ -68,6 +68,9 @@ class NurturingService:
                 lead_id=str(lead_id),
             )
 
+            if body is None or body == "" or body.strip() == "":
+                return self._get_fallback_message(client.name, shoot_type)
+
             return {"subject": f"Re: Your {shoot_type} shoot requirements", "body": body, "channel": "email"}
 
         except Exception as e:
