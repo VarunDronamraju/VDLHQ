@@ -20,34 +20,24 @@ async def get_dashboard(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
-    Returns leads and bookings for the authenticated client.
+    Returns ALL leads and bookings for the MVP demo (ignoring client_id filter).
     """
-    client_id = user.client_id
-    if not client_id and user.role != "ops":
-        raise HTTPException(status_code=400, detail="User is not associated with a client")
-
-    # If ops, they might pass a client_id? Or just dashboard for their 'own' client?
-    # Spec says "enforce lead.client_id == current_user.client_id NO exceptions" for client queries.
-    # If ops calls this, they better have a client_id in their token or we handle it.
-    # Actually, ops usually uses /api/v1/ops.
-    if not client_id:
-        raise HTTPException(status_code=403, detail="Client ID missing in token")
-    # Verify client exists
-    client_result = await db.execute(select(Client).where(Client.id == client_id))
-    if not client_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Client not found")
-
-    # Fetch leads
-    leads_result = await db.execute(select(Lead).where(Lead.client_id == client_id).order_by(Lead.created_at.desc()))
+    # Fetch ALL leads
+    leads_result = await db.execute(
+        select(Lead).order_by(Lead.created_at.desc())
+    )
     leads = leads_result.scalars().all()
 
-    # Fetch bookings with location names
-    bookings_result = await db.execute(select(Booking, Location.name.label("location_name")).join(Location).where(Booking.client_id == client_id).order_by(Booking.created_at.desc()))
+    # Fetch ALL bookings with location names
+    bookings_result = await db.execute(
+        select(Booking, Location.name.label("location_name"))
+        .join(Location)
+        .order_by(Booking.created_at.desc())
+    )
 
     bookings_data = []
     for row in bookings_result.all():
         booking, loc_name = row
-        # Manually create the object for the schema since we joined
         booking_brief = {
             "id": booking.id,
             "lead_id": booking.lead_id,

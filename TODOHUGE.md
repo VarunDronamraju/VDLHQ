@@ -132,8 +132,9 @@ Phase 14 — JWT auth wired across all endpoints              ✅ COMPLETE
 Phase 15 — System resilience + observability                ✅ COMPLETE
 Phase 16 — Railway Deployment                               ✅ COMPLETE
 Phase 17 — Frontend Foundation (React + Vite)               ✅ COMPLETE
-Phase 18 — Core Flow (Not Marketing)                        🚧 PENDING
-Phase 19 — Minimal UI implementation                        🚧 PENDING
+Phase 18 — Core Flow (Functional Dashboards)               ✅ COMPLETE
+Phase 19 — Minimal UI & Polish (Navigation + Refining)      🚧 CURRENT
+Phase 20 — Product Pages (Landing, Portfolio, Reviews)      🚧 PENDING
 ```
 
 **Why this order:**
@@ -1991,24 +1992,40 @@ AND p.updated_at < NOW() - INTERVAL '1 day' *
 
 ---
 
-## 🚧 PHASE 18 — CORE FLOW (NOT MARKETING) (IN PROGRESS)
+## ✅ PHASE 18 — CORE FLOW (COMPLETE)
 
-*Direct 1-to-1 mapping to the backend endpoints, no fluff.*
+*Functional dashboards mapping 1:1 to backend APIs.*
 
 **Key Steps:**
-1. **Inquiry Page**: Simple clean form pushing to `POST /api/v1/inquiry`.
-2. **Ops Dashboard**: List view of leads grouped by `workflow_state`. Action buttons mapped directly to `/api/v1/ops/leads/{lead_id}/action`.
-3. **Client Dashboard**: List client leads showing current status and details.
+1. **Inquiry Page**: Simple clean form pushing to `POST /api/v1/inquiry`. ✅
+2. **Ops Dashboard**: List view of leads grouped by status with valid transition dropdowns. ✅
+3. **Client Dashboard**: List client leads showing current status and details. ✅
 
 ---
 
-## PHASE 19 — MINIMAL UI
+## 🚧 PHASE 19 — MINIMAL UI & POLISH (CURRENT)
 
-*Ensure the interface remains purely functional.*
+*Refining the look and feel while keeping it strictly minimal.*
 
 **Key Steps:**
-1. **Clean Layout**: No parallax, no heavy animations, no unnecessary visuals.
-2. **Functional Completeness**: Ensure every backend endpoint required for the core flow has a matching, simple UI element.
+1. **Navbar Implementation**: Simple, clean navigation (Home, Portfolio, Reviews, Inquiry, Login).
+2. **Dashboard Refinement**: Subtle design polish for Inquiry, Ops, and Client dashboards.
+3. **Subtle Motion**: Fade/translate micro-interactions ONLY.
+
+---
+
+## 🚧 PHASE 20 — PRODUCT PAGES
+
+*Building out the external-facing content pages.*
+
+**Key Steps:**
+1. **Landing Page (/)**:
+    - Hero (Headline + CTA)
+    - Previous Productions (Horizontal Slider)
+    - Production Spaces (Location Grid)
+    - Final CTA
+2. **Portfolio (/portfolio)**: Static showcase grid.
+3. **Reviews (/reviews)**: Simple testimonials layout.
 
 ---
 

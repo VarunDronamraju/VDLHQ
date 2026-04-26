@@ -3,34 +3,66 @@
 @theme {
   --color-primary: #0D7C66;
   --color-primary-hover: #0a6654;
-  --color-teal-accent: #41C9B4;
-  --color-neutral-bg: #f8fafc;
-  --color-neutral-text: #1e293b;
+  --color-neutral-bg: #FCFCFC;
+  --color-surface: #FFFFFF;
 }
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    
+    /* Fluid Typography */
+    --text-xs: clamp(0.7rem, 0.65rem + 0.25vw, 0.75rem);
+    --text-sm: clamp(0.8rem, 0.75rem + 0.25vw, 0.875rem);
+    --text-base: clamp(0.9rem, 0.85rem + 0.25vw, 1rem);
+    --text-lg: clamp(1rem, 0.95rem + 0.5vw, 1.125rem);
+    --text-xl: clamp(1.125rem, 1.05rem + 0.75vw, 1.25rem);
+    --text-2xl: clamp(1.5rem, 1.4rem + 1vw, 1.875rem);
+    --text-3xl: clamp(1.875rem, 1.75rem + 1.5vw, 2.25rem);
+  }
 
-  color-scheme: light dark;
-  color: var(--color-neutral-text);
-  background-color: var(--color-neutral-bg);
+  body {
+    @apply bg-neutral-bg text-gray-900 font-sans antialiased;
+    letter-spacing: -0.01em;
+    margin: 0;
+    display: block; /* Removed flex center to allow normal page flow */
+    min-width: 320px;
+  }
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+  }
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-4 py-2 rounded-lg font-medium transition-all hover:bg-primary-hover active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  .card-premium {
+    @apply bg-white border border-gray-100 rounded-2xl p-6 transition-all;
+  }
 }
 
 #root {
   width: 100%;
+}
+
+/* Custom scrollbar for horizontal columns */
+::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D1D5DB;
 }

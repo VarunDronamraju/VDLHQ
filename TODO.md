@@ -123,18 +123,37 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
-## 🚧 PHASE 18 — CORE FLOW (NOT MARKETING)
-- [ ] **Inquiry Page**: Simple form mapping to `POST /api/v1/inquiry`.
-- [ ] **Ops Dashboard**: List leads, group by status, action buttons for state transitions.
-- [ ] **Client Dashboard**: List client leads showing status and details.
+## 🟢 PHASE 18 — CORE FLOW (COMPLETED)
+- [x] **Inquiry Page**: Simple form mapping to `POST /api/v1/inquiry`.
+- [x] **Ops Dashboard**: List leads, group by status, valid state transitions only.
+- [x] **Client Dashboard**: List client leads showing status and details.
 
 ---
 
-## 🚧 PHASE 19 — MINIMAL UI
-- [ ] **Clean Layout**: Functional, clean, no parallax, no heavy animations.
-- [ ] **Follow Backend**: Ensure all actions map 1:1 with backend APIs.
+## 🚧 PHASE 19 — MINIMAL UI & POLISH (CURRENT)
+- [ ] **Clean Layout**: Ensure strictly minimal, no parallax, no heavy animations.
+- [ ] **Refine Dashboards**: subtle design updates to Inquiry, Ops, and Client views.
+- [ ] **Navigation**: Implement simple Navbar (Home, Portfolio, Reviews, Inquiry, Login).
 
 ---
+
+## 🚧 PHASE 20 — PRODUCT PAGES
+- [ ] **Landing Page (/)**:
+    - [ ] Hero: Strong headline + Inquiry CTA.
+    - [ ] Previous Productions: Horizontal card slider.
+    - [ ] Production Spaces: Grid of location cards.
+    - [ ] Final CTA.
+- [ ] **Portfolio Page (/portfolio)**: Static showcase grid, minimal text.
+- [ ] **Reviews Page (/reviews)**: Simple testimonials list.
+
+---
+
+### 📏 Frontend Hard Rules
+1. **No Code Reuse**: Do not reuse code from old projects. Visual inspiration ONLY.
+2. **Product-Focused**: Clean, modern UI. No marketing fluff.
+3. **No Overengineering**: No search, no complex filtering, no AI features in UI.
+4. **Subtle Motion**: Fade/translate micro-interactions only. No parallax.
+5. **Verified**: Test 1:1 with backend APIs.
 
 ### 📏 Hard Rules
 1. **Vertical Build**: No skipping ahead.
