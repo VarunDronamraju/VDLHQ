@@ -19,26 +19,18 @@ Avoid generic SaaS styling.
 
 ## Color System (Instruction-Driven)
 
-### Step 1 — Reference Extraction
+### Palette Construction
 
-Before implementing colors:
+Build the palette around the core brand colors:
 
-* Identify **two high-end, modern product websites**
-* Extract:
+* **Primary Accent (Teal Gradient)**
+  * Use the core gradient for CTAs, highlights, and primary focus states.
+  * `background: linear-gradient(135deg, #0D7C66 0%, #41C9B4 100%);`
+  * Text gradient: Use the same linear gradient with `-webkit-background-clip: text` for special typographic emphasis.
 
-  * primary accent color
-  * background tones
-  * text hierarchy colors
-  * interaction states (hover, active)
-
-### Step 2 — Palette Construction
-
-Build a palette with:
-
-* **Primary Accent**
-
-  * used for CTAs, highlights, focus states
-  * should feel premium (not loud)
+* **Primary Solid Colors**
+  * `--primary-teal: #0D7C66;`
+  * `--secondary-teal: #41C9B4;`
 
 * **Dark Surface Tone**
 
@@ -160,11 +152,11 @@ Build a palette with:
 
 ### Motion Patterns
 
-* fade + slight translate
-* soft hover transitions
-* minimal scale on interaction
-
----
+* **Parallax Slideshows**: Hero sections and image galleries must NOT be static. They must be interactive parallax experiences using at least three distinct depth layers.
+* **Immersion**: Parallax movement must respond to mouse movement or device gyroscope data.
+* **Glassmorphism Overlays**: Use glassmorphism dynamically to layer UI over moving photography.
+* **Transitions**: Smooth-scroll transitions must be tied directly to primary Call to Action (CTA).
+* **Micro-interactions**: Fade + slight translate (`translateY(-2px)`), soft hover transitions, minimal scale on interaction.
 
 ### Feedback
 

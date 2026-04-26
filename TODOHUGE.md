@@ -130,6 +130,12 @@ Phase 12 — Analytics (C5)                                   ✅ COMPLETE
 Phase 13 — A6 Nurturing + C4 Follow-up                      ✅ COMPLETE
 Phase 14 — JWT auth wired across all endpoints              ✅ COMPLETE
 Phase 15 — System resilience + observability                ✅ COMPLETE
+Phase 16 — Railway Deployment                               ✅ COMPLETE
+Phase 17 — Frontend Foundation (React + Vite)               🚧 CURRENT
+Phase 18 — Marketing & Navigation Shell
+Phase 19 — Flow A: Location Discovery & Inquiry
+Phase 20 — Flow B: Location Registration
+Phase 21 — F3 & F4: Operational Dashboards
 ```
 
 **Why this order:**
@@ -1960,6 +1966,72 @@ WHERE p.status IN ('pending', 'submitted', 'in_review')
 AND p.updated_at < NOW() - INTERVAL '1 day' *
     (p.checklist->>'expected_approval_days')::int;
 ```
+
+---
+
+## PHASE 17 — Frontend Foundation (React + Vite) 🚧 CURRENT
+
+*Initializes the frontend SPA to interface with our deployed backend API.*
+
+**Key Steps:**
+1. **Initialize Project**: Run `npx -y create-vite-app@latest ./frontend`
+2. **Install Tailwind**: Set up Tailwind CSS.
+3. **Configure Aesthetic**: Following `uiux.md`, customize the theme with `colors: { primaryTeal: '#0D7C66', secondaryTeal: '#41C9B4' }` and construct the teal gradient for CTAs.
+4. **Implement Global CSS**: Add clamp typography and subtle glassmorphism utilities.
+5. **Axios/Fetch Setup**: Build a client configured with `BASE_URL` pointing to the live Railway endpoint and an interceptor for JWT auth headers.
+
+---
+
+## PHASE 18 — Marketing & Navigation Shell
+
+*The core website layout based on the `locationhq_wireframe_and_flow.html` spec.*
+
+**Key Steps:**
+1. **Global Navigation & Footer**: 
+    - Build sticky top nav (Logo, Locations, Register, Credits, Contact) using glassmorphism for background blur.
+    - Build global footer (Newsletter subscribe, Social icons, Link grids).
+2. **Interactive Homepage Hero**: Do NOT use static images. Build a multi-layer parallax slideshow responding to mouse/gyroscope movement to showcase featured rooftops/locations.
+3. **Category Grid**: Implement the 18-tile location category grid with subtle glassmorphic hover overlays and 3D tilt effects.
+4. **Global CTA**: "Can't find what you're looking for?" block linking to the phone line and contact form, tied directly to smooth-scroll transitions.
+
+---
+
+## PHASE 19 — Flow A: Location Discovery & Inquiry
+
+*The primary user journey for productions looking for locations.*
+
+**Key Steps:**
+1. **Category Pages**: Dynamic `/[category]` pages (e.g., Rooftops, Set Build Space).
+2. **Location Detail**: Detailed property pages showing image galleries, specs, and features.
+3. **F1: Structured Inquiry Form**: 
+    - Build the intake form for inquiries.
+    - Connect submission to our deployed `POST /api/v1/inquiry`.
+    - Provide a sleek "Loading" and "Success" state.
+
+---
+
+## PHASE 20 — Flow B: Location Registration
+
+*The funnel for property owners to list their space on LocationHQ.*
+
+**Key Steps:**
+1. **Registration Landing**: Explains guidelines and the "Spartan Agents" referral programme.
+2. **Submission Form**: Multi-step form capturing location details and photos.
+3. **API Integration**: Future hook into a LocationInventoryService.
+
+---
+
+## PHASE 21 — F3 & F4: Operational Dashboards
+
+*The protected internal tracking and client portal views.*
+
+**Key Steps:**
+1. **Authentication Flow**: Build an admin login page mapping to `get_current_user` logic via JWT.
+2. **Ops Pipeline (F3)**: 
+    - Fetch `/api/v1/ops/pipeline`.
+    - Map leads into a visual Kanban board grouped by `status`.
+    - Add manual transition controls that POST to `/api/v1/ops/leads/{lead_id}/action`.
+3. **Client Portal (F4)**: Fetch specific client pipeline via `/api/v1/client/dashboard`.
 
 ---
 

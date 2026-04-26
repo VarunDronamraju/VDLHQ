@@ -105,6 +105,44 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 - [ ] **Railway Configuration**: Link GitHub repo and deploy.
 - [ ] **Environment Variables**: Add all keys from `.env.example` to Railway dashboard.
 - [ ] **Verify Production**: Test public URL `/health` and `/docs`.
+---
+
+## 🚧 PHASE 17 — Frontend Foundation (Vite + React)
+- [ ] **Repository Setup**: Initialize Vite + React project.
+- [ ] **Design System Setup**: Configure Tailwind theme with premium colors, dark/light surface tokens.
+- [ ] **Typography**: Import fluid typography (clamp) and set primary fonts.
+- [ ] **Global Components**: Build base Button, Input, Card with subtle glassmorphism.
+- [ ] **API Client**: Configure Axios/Fetch instance to connect to deployed Railway backend.
+
+---
+
+## 🚧 PHASE 18 — Marketing & Navigation Shell
+- [ ] **Global Nav & Footer**: Build nav (Locations, Register, Credits, Contact) and 3-column footer.
+- [ ] **Hero Section**: Interactive multi-layer parallax slideshow (mouse/gyro-responsive).
+- [ ] **Category Grid**: 18-category location grid with glassmorphism hover states.
+- [ ] **Global CTA**: "Can't find what you're looking for?" strip.
+
+---
+
+## 🚧 PHASE 19 — Flow A: Location Discovery & Inquiry
+- [ ] **Category Pages**: Dynamic routes for `/[category]` (e.g. rooftops, interiors).
+- [ ] **Location Detail**: High-res image gallery and location metadata display.
+- [ ] **F1: Inquiry Form**: Sleek contact modal/page that `POST`s to our backend `/api/v1/inquiry`.
+
+---
+
+## 🚧 PHASE 20 — Flow B: Location Registration
+- [ ] **Registration Landing**: Page explaining "Register a Location" guidelines.
+- [ ] **Submission Form**: Multi-step property submission form with image uploads.
+- [ ] **Spartan Agents**: Call-out for the referral programme.
+
+---
+
+## 🚧 PHASE 21 — F3 & F4: Operational Dashboards
+- [ ] **Authentication**: Implement JWT login for Ops team.
+- [ ] **Ops Pipeline View**: Kanban board mapping to `workflow_state`.
+- [ ] **Analytics View**: Fetch and render snapshot metrics.
+- [ ] **Client View**: Read-only portal to check permit/booking status.
 
 ---
 
