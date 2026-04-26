@@ -29,24 +29,32 @@ async def submit_inquiry(
         client = result.scalar_one_or_none()
 
     if client is None:
+        # Capture company and role in profile_data
+        profile_data = {
+            "company": body.contact.company or (body.client_profile.get("company") if body.client_profile else None),
+            "role": body.contact.role or (body.client_profile.get("role") if body.client_profile else None),
+        }
         client = Client(
             name=body.contact.name,
             email=body.contact.email,
             phone=body.contact.phone,
-            profile_data={"company": body.contact.company} if body.contact.company else {},
+            profile_data={k: v for k, v in profile_data.items() if v is not None},
         )
         db.add(client)
         await db.flush()
 
     # ── Step 2: Build intake_data dict ────────────────────────────────────
+    # We include everything in intake_data to ensure it's logged and available for AI
     intake_data = {
         "shoot_type": body.shoot_type,
-        "dates": body.dates.model_dump() if body.dates else None,
-        "budget": body.budget.model_dump() if body.budget else None,
+        "dates": body.dates.model_dump() if body.dates and hasattr(body.dates, 'model_dump') else body.dates,
+        "budget": body.budget,
         "location_type": body.location_type,
         "crew_size": body.crew_size,
         "requirements": body.requirements,
         "contact": body.contact.model_dump(),
+        "client_profile": body.client_profile,
+        "context": body.context, # CRITICAL: Store the location/production context
     }
 
     # ── Step 3: Create Lead ───────────────────────────────────────────────
@@ -74,7 +82,6 @@ async def submit_inquiry(
     await db.commit()
 
     # ── Step 6: Enqueue Intake Pipeline ───────────────────────────────────
-    # We do this AFTER commit so the lead is available in the DB for the task.
     background_tasks.add_task(run_intake_pipeline, lead.id)
 
     return InquiryResponse(

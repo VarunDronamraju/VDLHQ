@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from pydantic import BaseModel, model_validator
 
@@ -9,6 +9,7 @@ class ContactSchema(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     company: Optional[str] = None
+    role: Optional[str] = None
 
     @model_validator(mode="after")
     def email_or_phone_required(self):
@@ -25,17 +26,19 @@ class DatesSchema(BaseModel):
 class BudgetSchema(BaseModel):
     min: Optional[float] = None
     max: Optional[float] = None
-    currency: Optional[str] = "INR"
+    currency: Optional[str] = "GBP"
 
 
 class InquiryRequest(BaseModel):
     contact: ContactSchema
+    client_profile: Optional[Dict[str, Any]] = None
     shoot_type: str
     dates: Optional[DatesSchema] = None
-    budget: Optional[BudgetSchema] = None
+    budget: Optional[Any] = None # Flexible budget for demo
     location_type: Optional[str] = None
     crew_size: Optional[int] = None
     requirements: Optional[str] = None
+    context: Optional[Dict[str, Any]] = None
 
 
 class InquiryResponse(BaseModel):

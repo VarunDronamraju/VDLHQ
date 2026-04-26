@@ -20,33 +20,48 @@ async def get_dashboard(
     user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
-    Returns ALL leads and bookings for the MVP demo (ignoring client_id filter).
+    Returns leads and bookings for the authenticated client.
     """
-    # Fetch ALL leads
-    leads_result = await db.execute(
-        select(Lead).order_by(Lead.created_at.desc())
-    )
+    client_id = user.client_id
+    if not client_id and user.role != "ops":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # If ops is viewing, they might need a client_id in query, but for now we follow user's context
+    if not client_id:
+        return ClientDashboard(leads=[], bookings=[])
+
+    # DEMO MODE: If using the fixed demo ID, show all leads for visibility
+    is_demo = str(client_id) == "00000000-0000-0000-0000-000000000001"
+    
+    # Fetch leads
+    stmt = select(Lead).order_by(Lead.created_at.desc())
+    if not is_demo:
+        stmt = stmt.where(Lead.client_id == client_id)
+        
+    leads_result = await db.execute(stmt)
     leads = leads_result.scalars().all()
 
-    # Fetch ALL bookings with location names
+    # Fetch bookings for this client
     bookings_result = await db.execute(
         select(Booking, Location.name.label("location_name"))
         .join(Location)
+        .where(Booking.lead_id.in_([l.id for l in leads]))
         .order_by(Booking.created_at.desc())
-    )
+    ) if leads else None
 
     bookings_data = []
-    for row in bookings_result.all():
-        booking, loc_name = row
-        booking_brief = {
-            "id": booking.id,
-            "lead_id": booking.lead_id,
-            "location_id": booking.location_id,
-            "status": booking.status,
-            "shoot_date": booking.shoot_date,
-            "location_name": loc_name,
-        }
-        bookings_data.append(booking_brief)
+    if bookings_result:
+        for row in bookings_result.all():
+            booking, loc_name = row
+            booking_brief = {
+                "id": booking.id,
+                "lead_id": booking.lead_id,
+                "location_id": booking.location_id,
+                "status": booking.status,
+                "shoot_date": booking.shoot_date,
+                "location_name": loc_name,
+            }
+            bookings_data.append(booking_brief)
 
     return ClientDashboard(leads=leads, bookings=bookings_data)
 
