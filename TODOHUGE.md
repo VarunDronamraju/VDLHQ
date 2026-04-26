@@ -1724,7 +1724,7 @@ async def refresh_analytics():
 
 ---
 
-## PHASE 10 — GET Endpoints (Client + Ops Reads)
+## PHASE 10 — GET Endpoints (Client + Ops Reads) (COMPLETED)
 
 ```
 GET  /client/dashboard          → leads + bookings for current client

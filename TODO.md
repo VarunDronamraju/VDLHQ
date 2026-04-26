@@ -84,8 +84,9 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
-## ⚪ PHASE 10 — GET Endpoints
-- [ ] **Ops/Client APIs**: Full dashboard and pipeline read/write routes.
+## 🟢 PHASE 10 — GET Endpoints (COMPLETED)
+- [x] **Ops/Client APIs**: Full dashboard and pipeline read/write routes.
+- [x] **Internal Retry**: Endpoint to manually re-trigger intake pipeline.
 
 ---
 
