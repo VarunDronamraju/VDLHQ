@@ -23,7 +23,7 @@ jobs:
           set -e
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install black isort flake8 pytest pytest-cov
+          pip install black isort flake8 pytest pytest-cov pytest-asyncio
 
       - name: Run isort check
         run: isort . --check-only
@@ -35,4 +35,6 @@ jobs:
         run: flake8 .
 
       - name: Run tests with coverage gate
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
         run: pytest --cov=app --cov-fail-under=90 --cov-report=term-missing
