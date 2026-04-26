@@ -1,11 +1,15 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 
+import jwt
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.api.dependencies import JWT_ALGORITHM, JWT_SECRET
 from app.db.session import get_async_session
 from app.main import app
 from app.models.core import Booking, Client, Lead, LeadStatus, Location, Permit
+from tests.conftest import create_test_token, get_auth_headers
 
 
 @pytest.mark.asyncio
@@ -20,15 +24,20 @@ async def test_client_dashboard_valid():
         client_id = c.id
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.get(f"/api/v1/client/dashboard?client_id={client_id}")
+        response = await ac.get("/api/v1/client/dashboard", headers=get_auth_headers("client", client_id))
     assert response.status_code == 200
     assert "leads" in response.json()
 
 
 @pytest.mark.asyncio
 async def test_client_dashboard_invalid():
+    # Client trying to access dashboard with token for another random client (or random ID)
+    # Actually, the token itself determines the client_id now.
+    token = create_test_token("user123", "client", str(uuid.uuid4()))
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.get(f"/api/v1/client/dashboard?client_id={uuid.uuid4()}")
+        response = await ac.get("/api/v1/client/dashboard", headers={"Authorization": f"Bearer {token}"})
+    # Since the client_id is in the token, it will look for THAT client.
+    # If THAT client doesn't exist in DB, it returns 404.
     assert response.status_code == 404
 
 
@@ -45,7 +54,7 @@ async def test_client_lead_detail_valid():
         lead_id = lead.id
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.get(f"/api/v1/client/leads/{lead_id}?client_id={client_id}")
+        response = await ac.get(f"/api/v1/client/leads/{lead_id}", headers=get_auth_headers("client", client_id))
     assert response.status_code == 200
     assert response.json()["id"] == str(lead_id)
 
@@ -72,7 +81,7 @@ async def test_client_lead_update_triggers_pipeline(monkeypatch):
 
     payload = {"intake_data": {"shoot_type": "new_type"}}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.post(f"/api/v1/client/leads/{lead_id}?client_id={client_id}", json=payload)
+        response = await ac.post(f"/api/v1/client/leads/{lead_id}", json=payload, headers=get_auth_headers("client", client_id))
     assert response.status_code == 200
     assert pipeline_called is True
 
@@ -88,7 +97,7 @@ async def test_ops_pipeline_filters():
         await db.commit()
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.get("/api/v1/ops/pipeline?status=ready")
+        response = await ac.get("/api/v1/ops/pipeline?status=ready", headers=get_auth_headers("ops"))
     assert response.status_code == 200
     assert any(le["status"] == "ready" for le in response.json())
 
@@ -106,7 +115,7 @@ async def test_ops_lead_action_valid():
 
     payload = {"target_state": "ready", "trigger": "ops_test", "actor": "pytest_ops"}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.post(f"/api/v1/ops/leads/{lead_id}/action", json=payload)
+        response = await ac.post(f"/api/v1/ops/leads/{lead_id}/action", json=payload, headers=get_auth_headers("ops"))
     assert response.status_code == 200
     assert response.json()["status"] == "ready"
 
@@ -128,7 +137,7 @@ async def test_ops_bookings_pipeline():
         await db.commit()
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.get("/api/v1/ops/bookings")
+        response = await ac.get("/api/v1/ops/bookings", headers=get_auth_headers("ops"))
     assert response.status_code == 200
     assert any(bk["client_name"] == "Ops Book Client" for bk in response.json())
 
@@ -156,14 +165,14 @@ async def test_ops_permit_update():
 
     payload = {"status": "approved"}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.post(f"/api/v1/ops/bookings/{booking_id}/permit/{permit_id}", json=payload)
+        response = await ac.post(f"/api/v1/ops/bookings/{booking_id}/permit/{permit_id}", json=payload, headers=get_auth_headers("ops"))
     assert response.status_code == 200
 
 
 @pytest.mark.asyncio
 async def test_ops_analytics():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.get("/api/v1/ops/analytics")
+        response = await ac.get("/api/v1/ops/analytics", headers=get_auth_headers("ops"))
     assert response.status_code == 200
 
 
@@ -185,6 +194,6 @@ async def test_internal_retry_valid(monkeypatch):
         await db.commit()
         lead_id = lead.id
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.post(f"/api/v1/internal/retry/{lead_id}")
+        response = await ac.post(f"/api/v1/internal/retry/{lead_id}", headers=get_auth_headers("ops"))
     assert response.status_code == 200
     assert pipeline_called is True

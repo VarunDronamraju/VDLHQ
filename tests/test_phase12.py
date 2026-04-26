@@ -9,6 +9,7 @@ from app.db.session import get_async_session
 from app.main import app
 from app.models.core import Client, Lead, LeadStatus, WorkflowState
 from app.services.core.analytics_service import analytics_service
+from tests.conftest import get_auth_headers
 
 
 @pytest.mark.asyncio
@@ -69,7 +70,8 @@ async def test_analytics_aggregations():
 @pytest.mark.asyncio
 async def test_analytics_api():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        resp = await ac.get("/api/v1/ops/analytics")
+        headers = get_auth_headers("ops")
+        resp = await ac.get("/api/v1/ops/analytics", headers=headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "status_counts" in data

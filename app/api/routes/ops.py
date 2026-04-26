@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.dependencies import require_ops
 from app.api.schemas.lead import BookingDetail, LeadAction, LeadBrief, LeadDetail, PermitUpdate
 from app.db.session import get_db
 from app.models.core import Booking, Lead, LeadStatus
@@ -23,6 +24,7 @@ async def get_pipeline(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
+    _user=Depends(require_ops),
 ):
     """
     Returns all leads, filterable by status, paginated.
@@ -39,6 +41,7 @@ async def get_pipeline(
 async def get_lead_detail_ops(
     lead_id: UUID,
     db: AsyncSession = Depends(get_db),
+    _user=Depends(require_ops),
 ):
     """
     Returns full detail for a lead including audit trail and communications.
@@ -59,6 +62,7 @@ async def lead_action(
     body: LeadAction,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
+    _user=Depends(require_ops),
 ):
     """
     Performs a manual state transition.
@@ -109,6 +113,7 @@ async def lead_action(
 @router.get("/bookings", response_model=List[BookingDetail])
 async def get_bookings_pipeline(
     db: AsyncSession = Depends(get_db),
+    _user=Depends(require_ops),
 ):
     """
     Returns booking pipeline with permit status.
@@ -141,6 +146,7 @@ async def update_permit_status_endpoint(
     permit_id: UUID,
     body: PermitUpdate,
     db: AsyncSession = Depends(get_db),
+    _user=Depends(require_ops),
 ):
     """
     Update permit status and trigger lead state transitions.
@@ -176,6 +182,7 @@ async def update_permit_status_endpoint(
 @router.get("/analytics")
 async def get_analytics(
     db: AsyncSession = Depends(get_db),
+    _user=Depends(require_ops),
 ):
     """
     Returns the latest aggregated metrics snapshot.

@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.db.session import get_async_session
 from app.main import app
 from app.models.core import Booking, Client, Lead, LeadStatus, Location, Permit
+from tests.conftest import get_auth_headers
 
 
 @pytest.mark.asyncio
@@ -65,18 +66,19 @@ async def test_update_permit_lifecycle():
         lead_id = lead.id
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        headers = get_auth_headers("ops")
         # 1. pending -> submitted
-        resp = await ac.post(f"/api/v1/ops/bookings/{booking_id}/permit/{permit_id}", json={"status": "submitted"})
+        resp = await ac.post(f"/api/v1/ops/bookings/{booking_id}/permit/{permit_id}", json={"status": "submitted"}, headers=headers)
         assert resp.status_code == 200
         assert resp.json()["lead_state"] == "permit_submitted"
 
         # 2. submitted -> in_review
-        resp = await ac.post(f"/api/v1/ops/bookings/{booking_id}/permit/{permit_id}", json={"status": "in_review"})
+        resp = await ac.post(f"/api/v1/ops/bookings/{booking_id}/permit/{permit_id}", json={"status": "in_review"}, headers=headers)
         assert resp.status_code == 200
         assert resp.json()["lead_state"] == "permit_in_review"
 
         # 3. in_review -> approved
-        resp = await ac.post(f"/api/v1/ops/bookings/{booking_id}/permit/{permit_id}", json={"status": "approved"})
+        resp = await ac.post(f"/api/v1/ops/bookings/{booking_id}/permit/{permit_id}", json={"status": "approved"}, headers=headers)
         assert resp.status_code == 200
         assert resp.json()["lead_state"] == "permit_approved"
 
@@ -147,8 +149,9 @@ async def test_booked_transition_triggers_pipeline(monkeypatch):
         loc_id = loc.id
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        headers = get_auth_headers("ops")
         payload = {"target_state": "booked", "metadata": {"location_id": str(loc_id)}}
-        resp = await ac.post(f"/api/v1/ops/leads/{lead_id}/action", json=payload)
+        resp = await ac.post(f"/api/v1/ops/leads/{lead_id}/action", json=payload, headers=headers)
         assert resp.status_code == 200
         assert pipeline_called is True
 

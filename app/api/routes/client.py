@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.dependencies import AuthenticatedUser, get_current_user
 from app.api.schemas.lead import ClientDashboard, LeadDetail, LeadUpdate
 from app.db.session import get_db
 from app.models.core import Booking, Client, Lead, Location
@@ -15,12 +16,22 @@ router = APIRouter()
 
 @router.get("/dashboard", response_model=ClientDashboard)
 async def get_dashboard(
-    client_id: UUID = Query(..., description="Client ID (temporary until auth)"),
     db: AsyncSession = Depends(get_db),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
-    Returns leads and bookings for the specified client.
+    Returns leads and bookings for the authenticated client.
     """
+    client_id = user.client_id
+    if not client_id and user.role != "ops":
+        raise HTTPException(status_code=400, detail="User is not associated with a client")
+
+    # If ops, they might pass a client_id? Or just dashboard for their 'own' client?
+    # Spec says "enforce lead.client_id == current_user.client_id NO exceptions" for client queries.
+    # If ops calls this, they better have a client_id in their token or we handle it.
+    # Actually, ops usually uses /api/v1/ops.
+    if not client_id:
+        raise HTTPException(status_code=403, detail="Client ID missing in token")
     # Verify client exists
     client_result = await db.execute(select(Client).where(Client.id == client_id))
     if not client_result.scalar_one_or_none():
@@ -53,12 +64,18 @@ async def get_dashboard(
 @router.get("/leads/{lead_id}", response_model=LeadDetail)
 async def get_lead_detail(
     lead_id: UUID,
-    client_id: UUID = Query(..., description="Client ID for verification"),
     db: AsyncSession = Depends(get_db),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Returns full detail for a single lead, restricted to the owning client.
     """
+    client_id = user.client_id
+    if not client_id and user.role != "ops":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if not client_id:  # Ops with no client_id accessing client route
+        raise HTTPException(status_code=403, detail="Client ID required")
     stmt = select(Lead).where(Lead.id == lead_id, Lead.client_id == client_id).options(selectinload(Lead.workflow_history), selectinload(Lead.communications))
     result = await db.execute(stmt)
     lead = result.scalar_one_or_none()
@@ -74,12 +91,18 @@ async def update_lead_inquiry(
     lead_id: UUID,
     body: LeadUpdate,
     background_tasks: BackgroundTasks,
-    client_id: UUID = Query(..., description="Client ID for verification"),
     db: AsyncSession = Depends(get_db),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Updates inquiry fields and re-triggers the intake pipeline.
     """
+    client_id = user.client_id
+    if not client_id and user.role != "ops":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if not client_id:
+        raise HTTPException(status_code=403, detail="Client ID required")
     result = await db.execute(select(Lead).where(Lead.id == lead_id, Lead.client_id == client_id))
     lead = result.scalar_one_or_none()
 

@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import require_ops
 from app.core.exceptions import LHQException
 from app.db.session import get_db
 from app.models.core import Lead
@@ -14,7 +15,14 @@ router = APIRouter()
 
 
 @router.post("/leads/{lead_id}/transition")
-async def transition_lead(lead_id: UUID, new_state: str, trigger: str, actor: str = "api", db: AsyncSession = Depends(get_db)):
+async def transition_lead(
+    lead_id: UUID,
+    new_state: str,
+    trigger: str,
+    actor: str = "api",
+    db: AsyncSession = Depends(get_db),
+    _user=Depends(require_ops),
+):
     engine = WorkflowEngine(db)
     try:
         result = await engine.transition(lead_id=lead_id, target_state=new_state, trigger=trigger, actor=actor)
@@ -27,7 +35,12 @@ async def transition_lead(lead_id: UUID, new_state: str, trigger: str, actor: st
 
 
 @router.post("/internal/retry/{lead_id}")
-async def retry_pipeline(lead_id: UUID, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+async def retry_pipeline(
+    lead_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    _user=Depends(require_ops),
+):
     """
     Manually re-trigger the intake pipeline for a lead.
     """
