@@ -1,16 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.session import get_db
 from app.models.core import Client, Lead, WorkflowState, LeadStatus
 from app.api.schemas.intake import InquiryRequest, InquiryResponse
+from app.pipelines.intake_pipeline import run_intake_pipeline
 
 router = APIRouter()
 
 @router.post("/inquiry", response_model=InquiryResponse, status_code=202)
 async def submit_inquiry(
     body: InquiryRequest,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     # ── Step 1: Look up or create Client ──────────────────────────────────
@@ -32,7 +34,7 @@ async def submit_inquiry(
             profile_data={"company": body.contact.company} if body.contact.company else {},
         )
         db.add(client)
-        await db.flush()   # assigns client.id before Lead FK needs it
+        await db.flush()
 
     # ── Step 2: Build intake_data dict ────────────────────────────────────
     intake_data = {
@@ -54,7 +56,7 @@ async def submit_inquiry(
         clarification_count=0,
     )
     db.add(lead)
-    await db.flush()   # assigns lead.id before WorkflowState FK needs it
+    await db.flush()
 
     # ── Step 4: Write initial WorkflowState row ───────────────────────────
     workflow_entry = WorkflowState(
@@ -69,9 +71,13 @@ async def submit_inquiry(
     # ── Step 5: Commit everything atomically ──────────────────────────────
     await db.commit()
 
+    # ── Step 6: Enqueue Intake Pipeline ───────────────────────────────────
+    # We do this AFTER commit so the lead is available in the DB for the task.
+    background_tasks.add_task(run_intake_pipeline, lead.id)
+
     return InquiryResponse(
         lead_id=lead.id,
         client_id=client.id,
         status="new",
-        message="Inquiry received.",
+        message="Inquiry received. Processing...",
     )

@@ -119,8 +119,8 @@ Phase 1  — Foundation                    ✅ COMPLETE
 Phase 2  — Schema completion (all models) ✅ COMPLETE
 Phase 3  — POST /inquiry endpoint          ✅ COMPLETE
 Phase 4  — C1 WorkflowEngine               ✅ COMPLETE
-Phase 5  — LLM client utility (Groq)
-Phase 6  — Intake pipeline (A1 + A2 + C2 + BackgroundTask)
+Phase 5  — LLM client utility (Groq)       ✅ COMPLETE
+Phase 6  — Intake pipeline (A1 + A2 + C2 + BackgroundTask) 🚧 CURRENT
 Phase 7  — A3 Matching (local embeddings + pgvector)
 Phase 8  — A5 Communication service
 Phase 9  — APScheduler + all scheduler jobs
@@ -801,7 +801,7 @@ asyncio.run(test())
 
 ---
 
-## PHASE 6 — Intake Pipeline (A1 + A2 + C2 + BackgroundTask)
+## PHASE 6 — Intake Pipeline (A1 + A2 + C2 + BackgroundTask) 🚧 CURRENT
 
 *Moves leads from 'new' to 'ready' or 'needs_info' asynchronously.*
 
