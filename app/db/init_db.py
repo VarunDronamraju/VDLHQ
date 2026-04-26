@@ -1,4 +1,10 @@
+import os
+import sys
 from sqlalchemy import text
+
+# Allow running from project root
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from app.db.connection import engine
 from app.models.base import Base
 import app.models.core  # Import to register models with Base.metadata
