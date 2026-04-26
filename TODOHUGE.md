@@ -1784,7 +1784,7 @@ GET /ops/analytics reads from analytics_snapshots (not live query)
 
 ---
 
-## PHASE 13 — A6 Nurturing + C4 FollowUp
+### PHASE 13 — A6 Nurturing + C4 FollowUp [COMPLETED]
 
 ```
 C4 FollowUpService (pure logic, no LLM):
@@ -1803,6 +1803,8 @@ A6 NurturingService (Groq):
 Complete `scan_followup_leads` and `run_nurturing_runner` scheduler jobs in this phase.
 
 **Git commit:** `feat: C4 follow-up service, A6 nurturing service, remaining scheduler jobs`
+[COMPLETED]
+
 
 ---
 

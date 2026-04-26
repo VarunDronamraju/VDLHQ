@@ -1,0 +1,10 @@
+Hi {client_name},
+
+We've noticed that we haven't heard back from you regarding your recent inquiry.
+
+To keep our pipeline organized, we've moved your inquiry to 'inactive' status for now. Don't worry—you can pick it up again at any time by simply replying to this message or updating your inquiry online.
+
+We'd love to help you find the perfect location!
+
+Best regards,
+The LocationHQ Team

@@ -1,0 +1,6 @@
+Hi {client_name},
+
+{body}
+
+Best regards,
+The LocationHQ Team
