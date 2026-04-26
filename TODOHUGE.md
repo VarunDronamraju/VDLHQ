@@ -122,14 +122,14 @@ Phase 4  — C1 WorkflowEngine               ✅ COMPLETE
 Phase 5  — LLM client utility (Groq)       ✅ COMPLETE
 Phase 6  — Intake pipeline (A1 + A2 + C2 + BackgroundTask) ✅ COMPLETE
 Phase 7  — A3 Matching (local embeddings + pgvector)        ✅ COMPLETE
-Phase 8  — A5 Communication service                         🚧 CURRENT
-Phase 9  — APScheduler + all scheduler jobs
-Phase 10 — GET endpoints (client + ops reads)
-Phase 11 — Permits (A4)
-Phase 12 — Analytics (C5)
-Phase 13 — A6 Nurturing + C4 Follow-up
-Phase 14 — JWT auth wired across all endpoints
-Phase 15 — System resilience + observability
+Phase 8  — A5 Communication service                         ✅ COMPLETE
+Phase 9  — APScheduler + all scheduler jobs                 ✅ COMPLETE
+Phase 10 — GET endpoints (client + ops reads)               ✅ COMPLETE
+Phase 11 — Permits (A4)                                     ✅ COMPLETE
+Phase 12 — Analytics (C5)                                   ✅ COMPLETE
+Phase 13 — A6 Nurturing + C4 Follow-up                      ✅ COMPLETE
+Phase 14 — JWT auth wired across all endpoints              ✅ COMPLETE
+Phase 15 — System resilience + observability                ✅ COMPLETE
 ```
 
 **Why this order:**
@@ -663,7 +663,7 @@ ORDER BY created_at;
 
 ---
 
-## PHASE 5 — LLM Client Utility (Groq)
+## PHASE 5 — LLM Client Utility (Groq) ✅ COMPLETE
 
 *Shared utility. All AI services (A1, A2, A4, A5, A6) call this. Build once.*
 
@@ -801,7 +801,7 @@ asyncio.run(test())
 
 ---
 
-## PHASE 6 — Intake Pipeline (A1 + A2 + C2 + BackgroundTask) 🚧 CURRENT
+## PHASE 6 — Intake Pipeline (A1 + A2 + C2 + BackgroundTask) ✅ COMPLETE
 
 *Moves leads from 'new' to 'ready' or 'needs_info' asynchronously.*
 
@@ -1447,7 +1447,7 @@ ORDER BY embedding <=> '[...384 values...]'::vector LIMIT 10;
 
 ---
 
-## PHASE 8 — A5 CommunicationService
+## PHASE 8 — A5 CommunicationService ✅ COMPLETE
 
 *Template-first. The only outbound messaging layer.*
 
@@ -1620,7 +1620,7 @@ async def _send_whatsapp(to: str, body: str) -> bool:
 
 ---
 
-## PHASE 9 — APScheduler + All Scheduler Jobs
+## PHASE 9 — APScheduler + All Scheduler Jobs ✅ COMPLETE
 
 *All 5 jobs. Wire after A5 is working since jobs trigger sends.*
 
@@ -1808,7 +1808,7 @@ Complete `scan_followup_leads` and `run_nurturing_runner` scheduler jobs in this
 
 ---
 
-## PHASE 14 — JWT Auth (Wired Across All Endpoints)
+## PHASE 14 — JWT Auth (Wired Across All Endpoints) ✅ COMPLETE
 
 ```python
 # app/api/dependencies.py
@@ -1840,7 +1840,7 @@ Add `Depends(get_current_user)` to every route. Add `Depends(require_ops)` to op
 
 ---
 
-## PHASE 15 — System Resilience + Observability
+## PHASE 15 — System Resilience + Observability ✅ COMPLETE
 
 ### Structured Logging
 

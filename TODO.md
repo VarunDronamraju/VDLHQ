@@ -72,15 +72,15 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
-## 🚧 PHASE 8 — A5 Communication Service (CURRENT)
-- [ ] **Template Engine**: Render templates and (optional) LLM tone rewrite.
-- [ ] **Channel Stubs**: Email/WhatsApp logging stubs.
+## 🟢 PHASE 8 — A5 Communication Service (COMPLETED)
+- [x] **Template Engine**: Render templates and (optional) LLM tone rewrite.
+- [x] **Channel Stubs**: Email/WhatsApp logging stubs.
 
 ---
 
-## ⚪ PHASE 9 — APScheduler
-- [ ] **Scheduler Init**: AsyncIOScheduler in FastAPI lifespan.
-- [ ] **Jobs**: Inactivity scanner, follow-up scanner, permit reminders.
+## 🟢 PHASE 9 — APScheduler (COMPLETED)
+- [x] **Scheduler Init**: AsyncIOScheduler in FastAPI lifespan.
+- [x] **Jobs**: Inactivity scanner, follow-up scanner, permit reminders.
 
 ---
 
@@ -90,12 +90,12 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
-## ⚪ PHASE 11-15 — Completion
+## 🟢 PHASE 11-15 — Completion (COMPLETED)
 - [x] **Phase 11**: Permits (A4) implementation.
 - [x] **Phase 12**: Analytics (C5) snapshots.
-- [x] **Phase 13**: Nurturing (A6) + Follow-up (C4) implementation. [COMPLETED]
-- [ ] **Phase 14**: JWT Auth overlay.
-- [ ] **Phase 15**: Resilience + Observability (JSON logging, request IDs).
+- [x] **Phase 13**: Nurturing (A6) + Follow-up (C4) implementation.
+- [x] **Phase 14**: JWT Auth overlay.
+- [x] **Phase 15**: Resilience + Observability (JSON logging, request IDs).
 
 ---
 
