@@ -8,6 +8,7 @@ from app.core.exceptions import InvalidTransition
 from app.db.session import get_async_session
 from app.models.core import Booking, Client, Lead, LeadStatus, Permit
 from app.services.ai import communication_service
+from app.services.core.analytics_service import analytics_service
 from app.services.core.workflow_engine import WorkflowEngine
 
 logger = structlog.get_logger()
@@ -50,6 +51,7 @@ async def scan_inactive_leads():
         for lead_id in lead_ids:
             try:
                 await engine.transition(lead_id=lead_id, target_state="inactive", trigger="inactivity_scanner", actor="system")
+                await db.commit()
                 actioned += 1
             except InvalidTransition:
                 skipped += 1
@@ -150,5 +152,14 @@ async def run_nurturing_runner():
 
 
 async def refresh_analytics():
-    """Stub for Phase 12"""
-    logger.info("job_stub", job="refresh_analytics")
+    """
+    Periodic job to update analytics snapshots.
+    """
+    logger.info("job_start", job="refresh_analytics")
+    async with get_async_session() as db:
+        try:
+            snapshot = await analytics_service.run_aggregations(db)
+            await db.commit()
+            logger.info("analytics_refreshed", snapshot_id=str(snapshot.id))
+        except Exception as e:
+            await log_system_error(db, "refresh_analytics", None, e)

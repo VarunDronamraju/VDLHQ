@@ -18,6 +18,7 @@ async def transition_lead(lead_id: UUID, new_state: str, trigger: str, actor: st
     engine = WorkflowEngine(db)
     try:
         result = await engine.transition(lead_id=lead_id, target_state=new_state, trigger=trigger, actor=actor)
+        await db.commit()
         return result
     except LHQException as exc:
         raise HTTPException(status_code=400, detail=str(exc))

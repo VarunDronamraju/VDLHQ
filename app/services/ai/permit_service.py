@@ -78,7 +78,7 @@ class PermitService:
     async def _create_permit(self, db: AsyncSession, booking_id: UUID, permit_type: str, checklist: dict) -> dict:
         permit = Permit(booking_id=booking_id, permit_type=permit_type, status="pending", checklist=checklist)
         db.add(permit)
-        await db.commit()
+        await db.flush()
         await db.refresh(permit)
         return {"permit_id": str(permit.id), "permit_type": permit_type, "status": "pending", "checklist": checklist}
 
@@ -100,7 +100,7 @@ class PermitService:
         if notes:
             permit.rejection_notes = notes
 
-        await db.commit()
+        await db.flush()
         await db.refresh(permit)
 
         return {"permit_id": str(permit.id), "previous_status": current, "new_status": new_status, "rejection_notes": permit.rejection_notes, "booking_id": permit.booking_id}

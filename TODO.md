@@ -92,7 +92,7 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ## ⚪ PHASE 11-15 — Completion
 - [x] **Phase 11**: Permits (A4) implementation.
-- [ ] **Phase 12**: Analytics (C5) snapshots.
+- [x] **Phase 12**: Analytics (C5) snapshots.
 - [ ] **Phase 13**: Nurturing (A6) + Follow-up (C4).
 - [ ] **Phase 14**: JWT Auth overlay.
 - [ ] **Phase 15**: Resilience + Observability (JSON logging, request IDs).

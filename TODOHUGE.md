@@ -1766,8 +1766,7 @@ Complete `run_permit_reminders` scheduler job in this phase.
 **Git commit:** `feat: A4 permit service, permit lifecycle, permit_reminders scheduler job`
 
 ---
-
-## PHASE 12 — C5 AnalyticsService
+## PHASE 12 — C5 AnalyticsService [COMPLETED]
 
 ```
 run_aggregations()

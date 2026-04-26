@@ -169,3 +169,15 @@ class SystemError(Base):
 
     # Relationships
     lead: Mapped[Optional["Lead"]] = relationship("Lead", back_populates="errors")
+
+
+class AnalyticsSnapshot(Base):
+    __tablename__ = "analytics_snapshots"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    status_counts: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    total_leads: Mapped[int] = mapped_column(Integer, nullable=False)
+    active_leads_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    conversion_rate: Mapped[float] = mapped_column(Numeric(5, 4), nullable=False)
+    avg_time_to_booking_days: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

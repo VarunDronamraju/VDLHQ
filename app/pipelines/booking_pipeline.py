@@ -26,6 +26,7 @@ async def run_booking_pipeline(lead_id: UUID, booking_id: UUID) -> None:
             # 2. Transition lead to permit_pending (C1)
             await engine.transition(lead_id=lead_id, target_state="permit_pending", trigger="booking_pipeline_initiated", actor="system")
 
+            await db.commit()
             logger.info("booking_pipeline_complete", lead_id=str(lead_id), booking_id=str(booking_id))
 
         except Exception as e:

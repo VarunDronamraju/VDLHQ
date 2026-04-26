@@ -30,6 +30,7 @@ async def test_generate_checklist_studio():
 
     async with get_async_session() as db:
         res = await permit_service.generate_checklist(booking_id, db)
+        await db.commit()
 
     assert res["status"] == "pending"
     assert res["permit_type"] == "internal_studio_approval"

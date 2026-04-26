@@ -41,5 +41,6 @@ async def run_intake_pipeline(lead_id: UUID) -> None:
         # 4. C1: Authoritative Transition
         try:
             await engine.transition(lead_id=lead_id, target_state=routing_decision.target_state, trigger="intake_pipeline", actor="system")
+            await db.commit()
         except (InvalidTransition, Exception) as e:
             await log_system_error(db, "intake_pipeline", lead_id, e)

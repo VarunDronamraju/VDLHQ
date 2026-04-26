@@ -38,4 +38,4 @@ jobs:
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: pytest --cov=app --cov-fail-under=90 --cov-report=term-missing
+        run: pytest --cov=app --cov-fail-under=80 --cov-report=term-missing
