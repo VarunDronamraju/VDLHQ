@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 
 def _load_env_file() -> None:
-    env_path = Path(".env")
+    env_path = Path(__file__).resolve().parents[2] / ".env"
     if not env_path.exists():
         return
 
