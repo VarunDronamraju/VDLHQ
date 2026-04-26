@@ -99,6 +99,15 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
+## 🚧 PHASE 16 — Railway Deployment (CURRENT)
+- [x] **Create Procfile**: `web: uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- [x] **Lock Python Version**: Create `.python-version` with `3.9`.
+- [ ] **Railway Configuration**: Link GitHub repo and deploy.
+- [ ] **Environment Variables**: Add all keys from `.env.example` to Railway dashboard.
+- [ ] **Verify Production**: Test public URL `/health` and `/docs`.
+
+---
+
 ### 📏 Hard Rules
 1. **Vertical Build**: No skipping ahead.
 2. **Deterministic State**: Only C1 modifies `status`.
