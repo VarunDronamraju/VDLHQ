@@ -1,0 +1,8 @@
+Hi {client_name},
+
+Thank you for your inquiry about filming at LocationHQ.
+
+To help us find the perfect location for your {shoot_type}, we need a few more details:
+{missing_fields_list}
+
+Could you please provide these at your earliest convenience?

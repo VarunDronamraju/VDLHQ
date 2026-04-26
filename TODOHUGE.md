@@ -120,9 +120,9 @@ Phase 2  — Schema completion (all models) ✅ COMPLETE
 Phase 3  — POST /inquiry endpoint          ✅ COMPLETE
 Phase 4  — C1 WorkflowEngine               ✅ COMPLETE
 Phase 5  — LLM client utility (Groq)       ✅ COMPLETE
-Phase 6  — Intake pipeline (A1 + A2 + C2 + BackgroundTask) 🚧 CURRENT
-Phase 7  — A3 Matching (local embeddings + pgvector)
-Phase 8  — A5 Communication service
+Phase 6  — Intake pipeline (A1 + A2 + C2 + BackgroundTask) ✅ COMPLETE
+Phase 7  — A3 Matching (local embeddings + pgvector)        ✅ COMPLETE
+Phase 8  — A5 Communication service                         🚧 CURRENT
 Phase 9  — APScheduler + all scheduler jobs
 Phase 10 — GET endpoints (client + ops reads)
 Phase 11 — Permits (A4)
@@ -1136,7 +1136,7 @@ SELECT source, error_type, message FROM system_errors ORDER BY created_at DESC L
 
 ---
 
-## PHASE 7 — A3 Matching Service (local embeddings + pgvector)
+## PHASE 7 — A3 Matching Service (local embeddings + pgvector) ✅ COMPLETE
 
 ### Step 7.1 — Embedding Client (sentence-transformers, local)
 

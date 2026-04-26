@@ -1,0 +1,7 @@
+Hi {client_name},
+
+We are currently reviewing locations for your {shoot_type}, but we'd like to clarify one thing to ensure we find the best fit:
+
+{clarification_question}
+
+Looking forward to your response.

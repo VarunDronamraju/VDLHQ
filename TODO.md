@@ -55,22 +55,24 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
-## 🚧 PHASE 6 — Intake Pipeline (A1 + A2 + C2) (CURRENT)
+## 🟢 PHASE 6 — Intake Pipeline (A1 + A2 + C2) (COMPLETED)
 *Target: Async lead processing. Refer to [Workflow.md](file:///Users/VD/Desktop/LHQ/FIles/Workflow.md).*
 
-- [ ] **A1 (Parser)**: Groq-powered extraction to `intake_data`.
-- [ ] **A2 (Readiness)**: Completeness scoring.
-- [ ] **Background Task**: Wire pipeline to `/inquiry` endpoint.
+- [x] **A1 (Parser)**: Groq-powered extraction to `intake_data`.
+- [x] **A2 (Readiness)**: Completeness scoring.
+- [x] **Background Task**: Wire pipeline to `/inquiry` endpoint.
 
 ---
 
-## ⚪ PHASE 7 — A3 Matching (pgvector)
-- [ ] **Local Embeddings**: `sentence-transformers` for location matching.
-- [ ] **Matching Logic**: pgvector cosine similarity + LLM ranking.
+## 🟢 PHASE 7 — A3 Matching (pgvector) (COMPLETED)
+*Target: Semantic location discovery.*
+
+- [x] **Local Embeddings**: `sentence-transformers` for location matching.
+- [x] **Matching Logic**: pgvector cosine similarity + LLM ranking.
 
 ---
 
-## ⚪ PHASE 8 — A5 Communication Service
+## 🚧 PHASE 8 — A5 Communication Service (CURRENT)
 - [ ] **Template Engine**: Render templates and (optional) LLM tone rewrite.
 - [ ] **Channel Stubs**: Email/WhatsApp logging stubs.
 

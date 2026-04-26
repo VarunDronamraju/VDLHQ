@@ -1,0 +1,7 @@
+Hi {client_name},
+
+We've found {location_count} location(s) that match your shoot requirements.
+
+{location_list}
+
+Please review and let us know which location you'd like to book, or if you'd like us to refine the search.
