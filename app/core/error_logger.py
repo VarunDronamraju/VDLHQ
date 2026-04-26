@@ -1,8 +1,11 @@
 import traceback
 from typing import Optional
 from uuid import UUID
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.core import SystemError
+
 
 async def log_system_error(
     db: AsyncSession,

@@ -1,0 +1,13 @@
+[tool.black]
+line-length = 188
+
+[tool.isort]
+profile = "black"
+line_length = 188
+skip = [".venv", "__pycache__"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+

@@ -1,12 +1,13 @@
 import json
-from uuid import UUID
 from dataclasses import dataclass
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from uuid import UUID
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import ReadinessFailure
 from app.models.core import Lead
 from app.services.ai import llm_client
-from app.core.exceptions import ReadinessFailure
 
 READINESS_THRESHOLD = 0.80
 
@@ -33,12 +34,14 @@ Respond with ONLY valid JSON:
   "reasoning": "one sentence"
 }"""
 
+
 @dataclass
 class ReadinessResult:
     score: float
     status: str
     missing_fields: list[str]
     reasoning: str
+
 
 async def score(
     lead_id: UUID,

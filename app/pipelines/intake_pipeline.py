@@ -1,18 +1,12 @@
-import sys
-import os
 from uuid import UUID
-from sqlalchemy import select
 
-# Allow running from project root
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
+from app.core.error_logger import log_system_error
+from app.core.exceptions import IntakeParseFailure, InvalidTransition, ReadinessFailure
 from app.db.session import get_async_session
 from app.services.ai import intake_service, readiness_service
 from app.services.core.routing_service import routing_service
 from app.services.core.workflow_engine import WorkflowEngine
-from app.core.exceptions import IntakeParseFailure, ReadinessFailure, InvalidTransition
-from app.core.error_logger import log_system_error
-from app.models.core import Lead
+
 
 async def run_intake_pipeline(lead_id: UUID) -> None:
     """
@@ -27,7 +21,7 @@ async def run_intake_pipeline(lead_id: UUID) -> None:
         try:
             structured_data = await intake_service.parse(lead_id, db)
             # Flush updates to intake_data
-            await db.commit() 
+            await db.commit()
         except IntakeParseFailure as e:
             await log_system_error(db, "intake_pipeline", lead_id, e)
             return
@@ -46,11 +40,6 @@ async def run_intake_pipeline(lead_id: UUID) -> None:
 
         # 4. C1: Authoritative Transition
         try:
-            await engine.transition(
-                lead_id=lead_id,
-                target_state=routing_decision.target_state,
-                trigger="intake_pipeline",
-                actor="system"
-            )
+            await engine.transition(lead_id=lead_id, target_state=routing_decision.target_state, trigger="intake_pipeline", actor="system")
         except (InvalidTransition, Exception) as e:
             await log_system_error(db, "intake_pipeline", lead_id, e)

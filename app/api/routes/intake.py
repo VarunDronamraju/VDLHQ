@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import get_db
-from app.models.core import Client, Lead, WorkflowState, LeadStatus
 from app.api.schemas.intake import InquiryRequest, InquiryResponse
+from app.db.session import get_db
+from app.models.core import Client, Lead, LeadStatus, WorkflowState
 from app.pipelines.intake_pipeline import run_intake_pipeline
 
 router = APIRouter()
+
 
 @router.post("/inquiry", response_model=InquiryResponse, status_code=202)
 async def submit_inquiry(

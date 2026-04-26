@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class RoutingDecision:
     action: str
     target_state: str
+
 
 class RoutingService:
     """
@@ -26,6 +28,7 @@ class RoutingService:
             action="trigger_followup",
             target_state="needs_info",
         )
+
 
 # Singleton instance
 routing_service = RoutingService()

@@ -1,6 +1,8 @@
-from pydantic import BaseModel, model_validator
-from typing import Optional
 import uuid
+from typing import Optional
+
+from pydantic import BaseModel, model_validator
+
 
 class ContactSchema(BaseModel):
     name: str
@@ -14,14 +16,17 @@ class ContactSchema(BaseModel):
             raise ValueError("Either email or phone is required")
         return self
 
+
 class DatesSchema(BaseModel):
     start: Optional[str] = None
     end: Optional[str] = None
+
 
 class BudgetSchema(BaseModel):
     min: Optional[float] = None
     max: Optional[float] = None
     currency: Optional[str] = "INR"
+
 
 class InquiryRequest(BaseModel):
     contact: ContactSchema
@@ -31,6 +36,7 @@ class InquiryRequest(BaseModel):
     location_type: Optional[str] = None
     crew_size: Optional[int] = None
     requirements: Optional[str] = None
+
 
 class InquiryResponse(BaseModel):
     lead_id: uuid.UUID

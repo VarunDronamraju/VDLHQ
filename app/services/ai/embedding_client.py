@@ -1,15 +1,18 @@
 import asyncio
 from typing import List
-from sentence_transformers import SentenceTransformer
+
 import structlog
+from sentence_transformers import SentenceTransformer
 
 logger = structlog.get_logger()
+
 
 class EmbeddingClient:
     """
     Local embedding utility (A3).
     Uses sentence-transformers/all-MiniLM-L6-v2 (384 dimensions).
     """
+
     _model = None
 
     @classmethod
@@ -29,6 +32,7 @@ class EmbeddingClient:
         # model.encode is a blocking CPU-bound task
         embedding = await loop.run_in_executor(None, model.encode, text)
         return embedding.tolist()
+
 
 # Singleton instance
 embedding_client = EmbeddingClient()

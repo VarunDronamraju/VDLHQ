@@ -1,19 +1,22 @@
-import groq
 import json
+from typing import Any, Dict, List, Optional
+
+import groq
 import structlog
-from typing import List, Dict, Optional, Any
 from tenacity import (
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
 )
+
 from app.core.exceptions import LLMFailure
 
 logger = structlog.get_logger()
 
 # AsyncGroq reads GROQ_API_KEY from environment
 _client = groq.AsyncGroq()
+
 
 @retry(
     stop=stop_after_attempt(3),
@@ -35,14 +38,11 @@ async def call(
     Raises LLMFailure after retries are exhausted.
     """
     log = logger.bind(service=service_name, lead_id=lead_id)
-    
+
     try:
         response = await _client.chat.completions.create(
             model=model,
-            messages=[
-                {"role": "system", "content": system},
-                *messages
-            ],
+            messages=[{"role": "system", "content": system}, *messages],
             max_tokens=max_tokens,
             temperature=temperature,
         )
@@ -55,6 +55,7 @@ async def call(
     except Exception as e:
         log.error("llm_call_failure", error=str(e))
         raise LLMFailure(f"Groq API error: {str(e)}")
+
 
 async def call_json(
     messages: List[Dict[str, str]],
@@ -69,7 +70,7 @@ async def call_json(
     Calls LLM with JSON mode enabled and parses result.
     """
     log = logger.bind(service=service_name, lead_id=lead_id)
-    
+
     # Inject JSON instruction if not present
     if "json" not in system.lower():
         system += "\n\nCRITICAL: You must return ONLY a valid JSON object. No preamble."
@@ -77,10 +78,7 @@ async def call_json(
     try:
         response = await _client.chat.completions.create(
             model=model,
-            messages=[
-                {"role": "system", "content": system},
-                *messages
-            ],
+            messages=[{"role": "system", "content": system}, *messages],
             max_tokens=max_tokens,
             temperature=temperature,
             response_format={"type": "json_object"},
@@ -88,7 +86,7 @@ async def call_json(
         content = response.choices[0].message.content
         log.info("llm_json_call_success", tokens=response.usage.total_tokens)
         return json.loads(content)
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         log.error("llm_json_parse_failure", content=content)
         raise LLMFailure("LLM returned invalid JSON")
     except Exception as e:

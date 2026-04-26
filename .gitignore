@@ -30,3 +30,21 @@ scratch/
 verify_neon.py
 skills-lock.json
 
+# --- Testing / Coverage ---
+.coverage
+htmlcov/
+.pytest_cache/
+
+# --- Logs ---
+*.log
+
+# --- Python cache (extra safety) ---
+*.pyo
+*.pyd
+
+# --- macOS ---
+.DS_Store
+
+# --- Env ---
+.env
+.env.*

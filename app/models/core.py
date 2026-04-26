@@ -3,12 +3,13 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pgvector.sqlalchemy import Vector
 
 from app.models.base import Base
+
 
 class LeadStatus(enum.Enum):
     new = "new"
@@ -29,6 +30,7 @@ class LeadStatus(enum.Enum):
     inactive = "inactive"
     archived = "archived"
 
+
 class Client(Base):
     __tablename__ = "clients"
 
@@ -36,13 +38,14 @@ class Client(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     phone: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    profile_data: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default='{}')
+    profile_data: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
     leads: Mapped[List["Lead"]] = relationship("Lead", back_populates="client")
     bookings: Mapped[List["Booking"]] = relationship("Booking", back_populates="client")
+
 
 class Lead(Base):
     __tablename__ = "leads"
@@ -51,9 +54,9 @@ class Lead(Base):
     client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id"), nullable=False, index=True)
     status: Mapped[LeadStatus] = mapped_column(Enum(LeadStatus, name="lead_status"), nullable=False, default=LeadStatus.new, index=True)
     readiness_score: Mapped[Optional[float]] = mapped_column(Numeric(4, 3))
-    missing_fields: Mapped[list] = mapped_column(JSONB, nullable=False, server_default='[]')
+    missing_fields: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
     clarification_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    intake_data: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default='{}')
+    intake_data: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), index=True)
 
@@ -63,6 +66,7 @@ class Lead(Base):
     bookings: Mapped[List["Booking"]] = relationship("Booking", back_populates="lead")
     communications: Mapped[List["CommunicationsLog"]] = relationship("CommunicationsLog", back_populates="lead")
     errors: Mapped[List["SystemError"]] = relationship("SystemError", back_populates="lead")
+
 
 class WorkflowState(Base):
     __tablename__ = "workflow_state"
@@ -78,6 +82,7 @@ class WorkflowState(Base):
     # Relationships
     lead: Mapped["Lead"] = relationship("Lead", back_populates="workflow_history")
 
+
 class Location(Base):
     __tablename__ = "locations"
 
@@ -87,11 +92,12 @@ class Location(Base):
     address: Mapped[str] = mapped_column(Text, nullable=False)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
     embedding: Mapped[Optional[list]] = mapped_column(Vector(384))  # all-MiniLM-L6-v2
-    metadata_: Mapped[dict] = mapped_column("metadata", JSONB, nullable=False, server_default='{}')
+    metadata_: Mapped[dict] = mapped_column("metadata", JSONB, nullable=False, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     bookings: Mapped[List["Booking"]] = relationship("Booking", back_populates="location")
+
 
 class Booking(Base):
     __tablename__ = "bookings"
@@ -115,6 +121,7 @@ class Booking(Base):
     permits: Mapped[List["Permit"]] = relationship("Permit", back_populates="booking")
     communications: Mapped[List["CommunicationsLog"]] = relationship("CommunicationsLog", back_populates="booking")
 
+
 class Permit(Base):
     __tablename__ = "permits"
 
@@ -122,13 +129,14 @@ class Permit(Base):
     booking_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("bookings.id"), nullable=False, index=True)
     permit_type: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending", index=True)
-    checklist: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default='{}')
+    checklist: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     rejection_notes: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
     booking: Mapped["Booking"] = relationship("Booking", back_populates="permits")
+
 
 class CommunicationsLog(Base):
     __tablename__ = "communications_log"
@@ -147,6 +155,7 @@ class CommunicationsLog(Base):
     lead: Mapped[Optional["Lead"]] = relationship("Lead", back_populates="communications")
     booking: Mapped[Optional["Booking"]] = relationship("Booking", back_populates="communications")
 
+
 class SystemError(Base):
     __tablename__ = "system_errors"
 
@@ -155,7 +164,7 @@ class SystemError(Base):
     lead_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("leads.id"), nullable=True, index=True)
     error_type: Mapped[str] = mapped_column(String(100), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    detail: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default='{}')
+    detail: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
 
     # Relationships

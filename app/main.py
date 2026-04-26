@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
-from app.db.connection import test_connection
+
 from app.api.routes.intake import router as intake_router
 from app.api.routes.workflow import router as workflow_router
 from app.core.scheduler import start_scheduler, stop_scheduler
+from app.db.connection import test_connection
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,10 +17,12 @@ async def lifespan(app: FastAPI):
     # Shutdown
     stop_scheduler()
 
+
 app = FastAPI(title="LocationHQ API", lifespan=lifespan)
 
 app.include_router(intake_router, prefix="/api/v1", tags=["intake"])
 app.include_router(workflow_router, prefix="/api/v1", tags=["workflow"])
+
 
 @app.get("/health")
 async def health_check() -> dict:

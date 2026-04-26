@@ -1,11 +1,12 @@
 import json
 from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import IntakeParseFailure
 from app.models.core import Lead
 from app.services.ai import llm_client
-from app.core.exceptions import IntakeParseFailure
 
 SYSTEM_PROMPT = """You are a data extraction assistant for a film location agency.
 Extract structured shoot requirements from the inquiry data provided.
@@ -26,6 +27,7 @@ Rules:
 - If a field is genuinely absent, use null — do not invent values
 - Dates must be ISO format or null"""
 
+
 async def parse(lead_id: UUID, db: AsyncSession) -> dict:
     """
     Load lead.intake_data from DB.
@@ -34,7 +36,7 @@ async def parse(lead_id: UUID, db: AsyncSession) -> dict:
     """
     result = await db.execute(select(Lead).where(Lead.id == lead_id))
     lead = result.scalar_one_or_none()
-    
+
     if not lead:
         raise IntakeParseFailure(f"Lead {lead_id} not found")
 
@@ -55,6 +57,6 @@ async def parse(lead_id: UUID, db: AsyncSession) -> dict:
     # We merge the structured data into the existing intake_data
     current_data = lead.intake_data or {}
     lead.intake_data = {**current_data, **structured}
-    
+
     # We don't commit here, the pipeline handles the final commit
     return structured
