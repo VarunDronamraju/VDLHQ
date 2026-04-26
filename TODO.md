@@ -116,33 +116,23 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
-## 🚧 PHASE 18 — Marketing & Navigation Shell
-- [ ] **Global Nav & Footer**: Build nav (Locations, Register, Credits, Contact) and 3-column footer.
-- [ ] **Hero Section**: Interactive multi-layer parallax slideshow (mouse/gyro-responsive).
-- [ ] **Category Grid**: 18-category location grid with glassmorphism hover states.
-- [ ] **Global CTA**: "Can't find what you're looking for?" strip.
+## ✅ PHASE 17 — FOUNDATION
+- [x] **Vite + React setup**: Initialize minimal project.
+- [x] **Tailwind config**: Setup basic styling rules.
+- [x] **API client**: Axios/Fetch with base URL and JWT header.
 
 ---
 
-## 🚧 PHASE 19 — Flow A: Location Discovery & Inquiry
-- [ ] **Category Pages**: Dynamic routes for `/[category]` (e.g. rooftops, interiors).
-- [ ] **Location Detail**: High-res image gallery and location metadata display.
-- [ ] **F1: Inquiry Form**: Sleek contact modal/page that `POST`s to our backend `/api/v1/inquiry`.
+## 🚧 PHASE 18 — CORE FLOW (NOT MARKETING)
+- [ ] **Inquiry Page**: Simple form mapping to `POST /api/v1/inquiry`.
+- [ ] **Ops Dashboard**: List leads, group by status, action buttons for state transitions.
+- [ ] **Client Dashboard**: List client leads showing status and details.
 
 ---
 
-## 🚧 PHASE 20 — Flow B: Location Registration
-- [ ] **Registration Landing**: Page explaining "Register a Location" guidelines.
-- [ ] **Submission Form**: Multi-step property submission form with image uploads.
-- [ ] **Spartan Agents**: Call-out for the referral programme.
-
----
-
-## 🚧 PHASE 21 — F3 & F4: Operational Dashboards
-- [ ] **Authentication**: Implement JWT login for Ops team.
-- [ ] **Ops Pipeline View**: Kanban board mapping to `workflow_state`.
-- [ ] **Analytics View**: Fetch and render snapshot metrics.
-- [ ] **Client View**: Read-only portal to check permit/booking status.
+## 🚧 PHASE 19 — MINIMAL UI
+- [ ] **Clean Layout**: Functional, clean, no parallax, no heavy animations.
+- [ ] **Follow Backend**: Ensure all actions map 1:1 with backend APIs.
 
 ---
 

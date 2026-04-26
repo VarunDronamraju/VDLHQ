@@ -131,11 +131,9 @@ Phase 13 — A6 Nurturing + C4 Follow-up                      ✅ COMPLETE
 Phase 14 — JWT auth wired across all endpoints              ✅ COMPLETE
 Phase 15 — System resilience + observability                ✅ COMPLETE
 Phase 16 — Railway Deployment                               ✅ COMPLETE
-Phase 17 — Frontend Foundation (React + Vite)               🚧 CURRENT
-Phase 18 — Marketing & Navigation Shell
-Phase 19 — Flow A: Location Discovery & Inquiry
-Phase 20 — Flow B: Location Registration
-Phase 21 — F3 & F4: Operational Dashboards
+Phase 17 — Frontend Foundation (React + Vite)               ✅ COMPLETE
+Phase 18 — Core Flow (Not Marketing)                        🚧 PENDING
+Phase 19 — Minimal UI implementation                        🚧 PENDING
 ```
 
 **Why this order:**
@@ -1982,56 +1980,35 @@ AND p.updated_at < NOW() - INTERVAL '1 day' *
 
 ---
 
-## PHASE 18 — Marketing & Navigation Shell
+## ✅ PHASE 17 — FOUNDATION (COMPLETE)
 
-*The core website layout based on the `locationhq_wireframe_and_flow.html` spec.*
+*Frontend base setup focusing purely on functional UI.*
 
 **Key Steps:**
-1. **Global Navigation & Footer**: 
-    - Build sticky top nav (Logo, Locations, Register, Credits, Contact) using glassmorphism for background blur.
-    - Build global footer (Newsletter subscribe, Social icons, Link grids).
-2. **Interactive Homepage Hero**: Do NOT use static images. Build a multi-layer parallax slideshow responding to mouse/gyroscope movement to showcase featured rooftops/locations.
-3. **Category Grid**: Implement the 18-tile location category grid with subtle glassmorphic hover overlays and 3D tilt effects.
-4. **Global CTA**: "Can't find what you're looking for?" block linking to the phone line and contact form, tied directly to smooth-scroll transitions.
+1. **Vite + React Setup**: Initialize frontend directory. ✅
+2. **Tailwind Config**: Setup basic utility classes (avoid over-engineering). ✅
+3. **API Client**: Setup `axios` or `fetch` wrapper configured with base URL and JWT headers. ✅
 
 ---
 
-## PHASE 19 — Flow A: Location Discovery & Inquiry
+## 🚧 PHASE 18 — CORE FLOW (NOT MARKETING) (IN PROGRESS)
 
-*The primary user journey for productions looking for locations.*
+*Direct 1-to-1 mapping to the backend endpoints, no fluff.*
 
 **Key Steps:**
-1. **Category Pages**: Dynamic `/[category]` pages (e.g., Rooftops, Set Build Space).
-2. **Location Detail**: Detailed property pages showing image galleries, specs, and features.
-3. **F1: Structured Inquiry Form**: 
-    - Build the intake form for inquiries.
-    - Connect submission to our deployed `POST /api/v1/inquiry`.
-    - Provide a sleek "Loading" and "Success" state.
+1. **Inquiry Page**: Simple clean form pushing to `POST /api/v1/inquiry`.
+2. **Ops Dashboard**: List view of leads grouped by `workflow_state`. Action buttons mapped directly to `/api/v1/ops/leads/{lead_id}/action`.
+3. **Client Dashboard**: List client leads showing current status and details.
 
 ---
 
-## PHASE 20 — Flow B: Location Registration
+## PHASE 19 — MINIMAL UI
 
-*The funnel for property owners to list their space on LocationHQ.*
-
-**Key Steps:**
-1. **Registration Landing**: Explains guidelines and the "Spartan Agents" referral programme.
-2. **Submission Form**: Multi-step form capturing location details and photos.
-3. **API Integration**: Future hook into a LocationInventoryService.
-
----
-
-## PHASE 21 — F3 & F4: Operational Dashboards
-
-*The protected internal tracking and client portal views.*
+*Ensure the interface remains purely functional.*
 
 **Key Steps:**
-1. **Authentication Flow**: Build an admin login page mapping to `get_current_user` logic via JWT.
-2. **Ops Pipeline (F3)**: 
-    - Fetch `/api/v1/ops/pipeline`.
-    - Map leads into a visual Kanban board grouped by `status`.
-    - Add manual transition controls that POST to `/api/v1/ops/leads/{lead_id}/action`.
-3. **Client Portal (F4)**: Fetch specific client pipeline via `/api/v1/client/dashboard`.
+1. **Clean Layout**: No parallax, no heavy animations, no unnecessary visuals.
+2. **Functional Completeness**: Ensure every backend endpoint required for the core flow has a matching, simple UI element.
 
 ---
 

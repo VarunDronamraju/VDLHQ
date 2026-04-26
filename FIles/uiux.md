@@ -152,11 +152,9 @@ Build the palette around the core brand colors:
 
 ### Motion Patterns
 
-* **Parallax Slideshows**: Hero sections and image galleries must NOT be static. They must be interactive parallax experiences using at least three distinct depth layers.
-* **Immersion**: Parallax movement must respond to mouse movement or device gyroscope data.
-* **Glassmorphism Overlays**: Use glassmorphism dynamically to layer UI over moving photography.
-* **Transitions**: Smooth-scroll transitions must be tied directly to primary Call to Action (CTA).
-* **Micro-interactions**: Fade + slight translate (`translateY(-2px)`), soft hover transitions, minimal scale on interaction.
+* **Clean Layout Only**: No parallax, no heavy animations.
+* **Micro-interactions**: Fade + slight translate, soft hover transitions.
+* **Purpose**: Functional product UI first. Avoid marketing-heavy or distractive elements.
 
 ### Feedback
 

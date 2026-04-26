@@ -16,7 +16,6 @@ async def submit_inquiry(
     body: InquiryRequest,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    _user=Depends(get_current_user),
 ):
     # ── Step 1: Look up or create Client ──────────────────────────────────
     client = None
