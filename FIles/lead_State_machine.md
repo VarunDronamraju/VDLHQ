@@ -1,21 +1,30 @@
-Lead State Machine
-new
- └─→ needs_info          (readiness score below threshold or fields missing)
-      └─→ inactive        (no client response after 7+ days)
-           └─→ archived   (no response after extended period)
-      └─→ ready           (client provides missing fields, readiness passes)
- └─→ ready               (readiness score passes threshold on first attempt)
-      └─→ matched         (location shortlist sent, awaiting client decision)
-           └─→ ready      (client rejects shortlist, re-matching triggered)
-           └─→ inactive   (no client response after 7+ days at matched stage)
-           └─→ booked     (client confirms location)
-                └─→ permit_pending    (permit checklist generated, process initiated)
-                     └─→ permit_submitted  (ops team submits permits to authority)
-                          └─→ permit_in_review  (authority reviewing)
-                               └─→ permit_approved   (permits cleared)
-                                    └─→ coordination  (shoot logistics underway)
-                                         └─→ closed   (shoot completed)
-                               └─→ permit_rejected   (flagged for manual resolution)
-                                    └─→ permit_pending (resubmission after resolution)
+# Lead State Machine (Canonical)
+This file MUST match the canonical state machine defined in `README.md`, `Architecture.md`, and `AGENTS.md`.
 
-C1 WorkflowEngine owns every transition. Inactivity is detected at needs_info, matched, and permit stages. Reminders and nudges are sent by C1 via A5 independently of state changes.
+```
+new
+ ├─→ needs_info          (missing fields or below readiness threshold)
+ │    ├─→ ready          (client provides missing fields, readiness passes)
+ │    └─→ inactive       (no response after 7+ days)
+ │         └─→ archived  (no response after extended nurturing period)
+ └─→ ready               (readiness passes on first attempt)
+      └─→ matching_in_progress
+           ├─→ needs_clarification  (poor match results; one clarification loop)
+           │    └─→ matching_in_progress  (max once; enforced by clarification_count)
+           ├─→ matched              (shortlist sent to client)
+           │    ├─→ ready           (client rejects; re-enters routing and matching)
+           │    ├─→ booked          (client confirms location)
+           │    │    └─→ permit_pending
+           │    │         └─→ permit_submitted
+           │    │              └─→ permit_in_review
+           │    │                   ├─→ permit_approved
+           │    │                   │    └─→ coordination
+           │    │                   │         └─→ closed
+           │    │                   └─→ permit_rejected
+           │    │                        └─→ permit_pending  (resubmission after resolution)
+           │    └─→ inactive        (no client response after 7+ days at matched)
+           └─→ manual_review        (clarification loop exhausted; ops takes over)
+                └─→ ready           (ops resolves; clarification_count reset to 0)
+```
+
+**Ownership rule (strict):** ONLY `C1 (WorkflowEngine)` can modify `leads.status`. All transitions MUST go through `C1.transition()` and MUST be appended to `workflow_state`.

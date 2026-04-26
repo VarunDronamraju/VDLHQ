@@ -13,8 +13,20 @@ Thumbs.db
 *.swp
 *.swo
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
 # Project specific
 .agents/
 node_modules/
 dist/
 build/
+scratch/
+verify_neon.py
+skills-lock.json
+

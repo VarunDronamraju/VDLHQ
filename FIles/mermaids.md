@@ -34,11 +34,23 @@ flowchart TB
   end
     Client(["Client"]) --> API
     API --> F1 & F11
+    %% Full inquiry triggers intake pipeline (A1 → A2 → C2 → C1.transition)
     F1 --> A1
-    F11 --> A1
-    A1 --> C3 & DB[("PostgreSQL")] & A2
-    A2 --> C1
-    C1 --> C2 & A3 & C4 & A4 & DB & A5
+
+    %% Partial inquiry does NOT trigger A1/A2.
+    %% It creates a lead in needs_info and stores missing_fields; follow-up is handled via C4 → A5.
+    F11 --> C3
+
+    %% Intake pipeline: services return results; ONLY C1 writes leads.status
+    A1 --> A2
+    A2 --> C2
+    C2 --> C1
+
+    %% Profile lookup/creation is synchronous during inquiry/partial submission
+    C3 --> DB[("PostgreSQL")]
+
+    %% Workflow orchestration + persistence
+    C1 --> DB & A3 & C4 & A4 & A5
     C2 --> C1
     A3 --> C1
     A4 --> C1
@@ -216,31 +228,32 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     Client->>API: Submit inquiry form
-    API->>A1: Route request
-    A1->>C3: Check existing profile
-    C3-->>A1: Return profile or create new
-    A1->>DB: Write lead record (status: new)
-    A1->>A2: Pass structured data
+    API->>C3: Lookup or create client profile (sync)
+    C3->>DB: Read/write clients
+    API->>DB: Create lead (status: new) and store intake_data (sync)
+    API-->>Client: 202 Accepted (lead created; async processing queued)
+    Note over API,C1: BackgroundTask runs after response
+    API->>A1: run_intake_pipeline(lead_id) starts
 
+    A1->>A2: Parse + pass structured data
     A2->>A2: Score completeness
     alt Lead is ready
-        A2->>DB: Update status to ready
-        A2->>C2: Route decision (ready)
-        C2->>C1: Trigger matching flow
+        A2-->>C2: ReadinessResult(status=ready, score, missing_fields)
+        C2-->>C1: Route decision (target_state=matching_in_progress)
+        C1->>DB: C1.transition(...) writes lead.status + workflow_state
+        C1->>A3: Trigger matching pipeline (async)
     else Lead is incomplete
-        A2->>DB: Update status to needs_info
-        A2->>C2: Route decision (needs_info)
-        C2->>C1: Trigger follow-up flow
-        C1->>C4: Queue follow-up
+        A2-->>C2: ReadinessResult(status=needs_info, missing_fields)
+        C2-->>C1: Route decision (target_state=needs_info)
+        C1->>DB: C1.transition(...) writes lead.status + workflow_state
+        C1->>C4: Build follow-up context (rule-based)
         C4->>A5: Pass context for missing fields
-        A5-->>Client: Send targeted message
+        A5-->>Client: Send targeted message (async)
         Client->>API: Submit updated inquiry
-        API->>A1: Route request
-        A1->>A2: Reprocess updated data
-        A2->>A2: Rescore
+        API->>DB: Merge updates into leads.intake_data (sync)
+        API-->>Client: 202 Accepted (re-assessing async)
+        API->>A1: run_intake_pipeline(lead_id) re-triggered
     end
-
-    C1->>DB: Initialize / update workflow state
     C1->>A3: Request location match
 
     A3->>DB: Query location inventory
@@ -248,13 +261,13 @@ sequenceDiagram
     A3-->>C1: Return shortlist
 
     C1->>DB: Store shortlist
-    C1->>DB: Update status to matched
+    C1->>DB: C1.transition(...) updates lead.status to matched + workflow_state
     C1->>A5: Trigger shortlist notification
     A5-->>Client: Send shortlist
 
     Client->>API: Confirm location selection
     API->>C1: Route confirmation
-    C1->>DB: Update status to booked
+    C1->>DB: C1.transition(...) updates lead.status to booked + workflow_state
     C1->>A4: Request permit checklist
 
     A4->>A4: Infer permit requirements
@@ -305,10 +318,16 @@ stateDiagram-v2
     needs_info --> ready: Client provides missing fields
     needs_info --> inactive: No response after 7 days
 
-    ready --> matched: Shortlist sent
+    ready --> matching_in_progress: Matching starts
+    matching_in_progress --> matched: Shortlist sent
+    matching_in_progress --> needs_clarification: Poor match (1x max)
+    matching_in_progress --> manual_review: Clarification exhausted
+    needs_clarification --> matching_in_progress: Client clarifies (re-run)
+
     matched --> ready: Client rejects shortlist
     matched --> inactive: No response after 7 days
     matched --> booked: Client confirms location
+    manual_review --> ready: Ops resolves; reset clarification_count
 
     booked --> permit_pending: Initiate permit process
     permit_pending --> permit_submitted: Submitted by ops
@@ -365,11 +384,11 @@ erDiagram
     WORKFLOW_STATE {
         uuid id PK
         uuid lead_id FK
-        string current_stage
-        string owner
-        string previous_stage
+        string previous_state
+        string new_state
+        string trigger
+        string actor
         timestamp created_at
-        timestamp updated_at
     }
 
     BOOKING {
@@ -430,9 +449,13 @@ flowchart TB
         C5["C5: AnalyticsService"]
   end
     Client(["Client"]) --> API["API Gateway"]
+    API --> C3
+    C3 --> DB[("PostgreSQL")]
+
+    %% Full inquiry pipeline: A1 → A2 → C2 → C1.transition (ONLY C1 writes lead.status)
     API --> A1
-    A1 --> C3 & DB[("PostgreSQL")] & A2
-    A2 --> DB & C2
+    A1 --> A2
+    A2 --> C2
     C2 --> C1 & C4
     C1 --> DB & A3 & A4 & A5
     A3 --> DB & C1
