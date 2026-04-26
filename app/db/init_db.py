@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 from sqlalchemy import text
 
 # Allow running from project root
@@ -7,27 +8,26 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from app.db.connection import engine
 from app.models.base import Base
-import app.models.core  # Import to register models with Base.metadata
+import app.models.core  # Import to register models
 
-def init_db():
-    print("Initializing database...")
-    with engine.begin() as conn:
+async def init_db():
+    print("Initializing database (Async)...")
+    async with engine.begin() as conn:
         # 1. Enable pgvector extension
         print("Enabling pgvector extension...")
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
         
-        # 2. Drop existing tables to ensure clean schema (v2)
+        # 2. Drop existing tables
         print("Dropping existing tables...")
-        Base.metadata.drop_all(bind=conn)
+        await conn.run_sync(Base.metadata.drop_all)
         
         # 3. Create all tables
         print("Creating all tables...")
-        Base.metadata.create_all(bind=conn)
+        await conn.run_sync(Base.metadata.create_all)
         
-        # 4. Create vector index for similarity search
-        # Using ivfflat with lists=50 for small/medium inventory
+        # 4. Create vector index
         print("Creating vector index on locations...")
-        conn.execute(text("""
+        await conn.execute(text("""
             CREATE INDEX IF NOT EXISTS idx_locations_embedding 
             ON locations 
             USING ivfflat (embedding vector_cosine_ops) 
@@ -37,4 +37,4 @@ def init_db():
     print("Database initialization complete.")
 
 if __name__ == "__main__":
-    init_db()
+    asyncio.run(init_db())

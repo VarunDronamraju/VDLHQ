@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.session import get_db
@@ -9,18 +9,20 @@ from app.api.schemas.intake import InquiryRequest, InquiryResponse
 router = APIRouter()
 
 @router.post("/inquiry", response_model=InquiryResponse, status_code=202)
-def submit_inquiry(
+async def submit_inquiry(
     body: InquiryRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     # ── Step 1: Look up or create Client ──────────────────────────────────
     client = None
 
     if body.contact.email:
-        client = db.query(Client).filter(Client.email == body.contact.email).first()
+        result = await db.execute(select(Client).filter(Client.email == body.contact.email))
+        client = result.scalar_one_or_none()
 
     if client is None and body.contact.phone:
-        client = db.query(Client).filter(Client.phone == body.contact.phone).first()
+        result = await db.execute(select(Client).filter(Client.phone == body.contact.phone))
+        client = result.scalar_one_or_none()
 
     if client is None:
         client = Client(
@@ -30,7 +32,7 @@ def submit_inquiry(
             profile_data={"company": body.contact.company} if body.contact.company else {},
         )
         db.add(client)
-        db.flush()   # assigns client.id before Lead FK needs it
+        await db.flush()   # assigns client.id before Lead FK needs it
 
     # ── Step 2: Build intake_data dict ────────────────────────────────────
     intake_data = {
@@ -52,12 +54,12 @@ def submit_inquiry(
         clarification_count=0,
     )
     db.add(lead)
-    db.flush()   # assigns lead.id before WorkflowState FK needs it
+    await db.flush()   # assigns lead.id before WorkflowState FK needs it
 
     # ── Step 4: Write initial WorkflowState row ───────────────────────────
     workflow_entry = WorkflowState(
         lead_id=lead.id,
-        previous_state=None,          # no prior state on creation
+        previous_state=None,
         new_state="new",
         trigger="inquiry_submission",
         actor="api",
@@ -65,7 +67,7 @@ def submit_inquiry(
     db.add(workflow_entry)
 
     # ── Step 5: Commit everything atomically ──────────────────────────────
-    db.commit()
+    await db.commit()
 
     return InquiryResponse(
         lead_id=lead.id,

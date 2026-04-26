@@ -1,9 +1,6 @@
-from typing import Generator
-from app.db.connection import SessionLocal
+from typing import AsyncGenerator
+from app.db.connection import AsyncSessionLocal
 
-def get_db() -> Generator:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db() -> AsyncGenerator:
+    async with AsyncSessionLocal() as session:
+        yield session
