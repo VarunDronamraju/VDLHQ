@@ -14,32 +14,32 @@ This checklist is the **Source of Truth** for the LocationHQ build, strictly fol
 
 ---
 
-## 🚧 PHASE 2 — Schema Completion (CURRENT)
+## 🟢 PHASE 2 — Schema Completion (COMPLETED)
 *Target: Complete the DB backbone. Refer to [Schema.md](file:///Users/VD/Desktop/LHQ/FIles/Schema.md).*
 
-- [ ] **Correct Vector Dimension**: Update `locations.embedding` to `Vector(384)` (for `all-MiniLM-L6-v2`).
-- [ ] **Implement Remaining Models**:
-    - [ ] `Location` (with 384-dim vector).
-    - [ ] `Booking`.
-    - [ ] `Permit`.
-    - [ ] `CommunicationsLog`.
-    - [ ] `SystemError`.
-- [ ] **Verification**:
-    - [ ] Run initialization script.
-    - [ ] Confirm all 8 tables exist and dimensions are correct.
+- [x] **Correct Vector Dimension**: Update `locations.embedding` to `Vector(384)` (for `all-MiniLM-L6-v2`).
+- [x] **Implement Remaining Models**:
+    - [x] `Location` (with 384-dim vector).
+    - [x] `Booking`.
+    - [x] `Permit`.
+    - [x] `CommunicationsLog`.
+    - [x] `SystemError`.
+- [x] **Verification**:
+    - [x] Run initialization script.
+    - [x] Confirm all 8 tables exist and dimensions are correct.
 
 ---
 
-## ⚪ PHASE 3 — POST /inquiry Endpoint
+## 🟢 PHASE 3 — POST /inquiry Endpoint (COMPLETED)
 *Target: Atomic lead creation. Refer to [STageAPI.md](file:///Users/VD/Desktop/LHQ/STageAPI.md).*
 
-- [ ] **Schemas**: Pydantic models for `InquiryRequest`.
-- [ ] **Route**: `POST /inquiry` with atomic transaction (Client → Lead → WorkflowState).
-- [ ] **Verification**: Submit test payload, check DB audit trail.
+- [x] **Schemas**: Pydantic models for `InquiryRequest`.
+- [x] **Route**: `POST /inquiry` with atomic transaction (Client → Lead → WorkflowState).
+- [x] **Verification**: Submit test payload, check DB audit trail.
 
 ---
 
-## ⚪ PHASE 4 — C1 WorkflowEngine
+## 🚧 PHASE 4 — C1 WorkflowEngine (CURRENT)
 *Target: Centralized state machine. Refer to [lead_State_machine.md](file:///Users/VD/Desktop/LHQ/FIles/lead_State_machine.md).*
 
 - [ ] **Workflow Service**: Implement `WorkflowEngine.transition()` with guards.

@@ -2,7 +2,11 @@ from fastapi import FastAPI, HTTPException
 
 from app.db.connection import test_connection
 
+from app.api.routes.intake import router as intake_router
+
 app = FastAPI()
+
+app.include_router(intake_router, prefix="/api/v1", tags=["intake"])
 
 
 @app.on_event("startup")
