@@ -1,6 +1,6 @@
-import structlog
 from datetime import datetime, timedelta, timezone
 
+import structlog
 from sqlalchemy import select
 
 from app.core.error_logger import log_system_error

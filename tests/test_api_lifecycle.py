@@ -2,8 +2,8 @@ import uuid
 
 from fastapi.testclient import TestClient
 
-from app.db.session import get_db
 from app.core.exceptions import LHQException
+from app.db.session import get_db
 from app.main import app
 
 
