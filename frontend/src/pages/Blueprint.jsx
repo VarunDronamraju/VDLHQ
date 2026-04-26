@@ -95,7 +95,6 @@ const Blueprint = () => {
             )}
           </div>
         </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-16">
         
