@@ -26,10 +26,24 @@ async def get_dashboard(
     if not client_id and user.role != "ops":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    # Verify client exists
+    # Verify client exists (Lazy seed for demo ID)
     client_check = await db.execute(select(Client).where(Client.id == client_id))
-    if not client_check.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Client not found")
+    client = client_check.scalar_one_or_none()
+    
+    if not client:
+        if str(client_id) == "00000000-0000-0000-0000-000000000001":
+            # Auto-create demo client if it was wiped
+            client = Client(
+                id=client_id,
+                name="Demo Client Account",
+                email="demo@locationhq.com",
+                phone="+1 234 567 890",
+                profile_data={"is_demo": True, "company": "Demo Productions"}
+            )
+            db.add(client)
+            await db.commit()
+        else:
+            raise HTTPException(status_code=404, detail="Client not found")
 
     # If ops is viewing, they might need a client_id in query, but for now we follow user's context
     if not client_id:
