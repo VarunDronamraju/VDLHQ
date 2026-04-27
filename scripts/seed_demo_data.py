@@ -1,8 +1,11 @@
 import asyncio
 import uuid
+
+from sqlalchemy import select
+
 from app.db.connection import AsyncSessionLocal
 from app.models.core import Location
-from sqlalchemy import select
+
 
 async def seed():
     async with AsyncSessionLocal() as db:
@@ -17,13 +20,14 @@ async def seed():
                 type="Industrial",
                 address="123 Production Lane, London, E1 6QL",
                 available=True,
-                metadata_={"description": "Standard high-ceiling studio for demo purposes."}
+                metadata_={"description": "Standard high-ceiling studio for demo purposes."},
             )
             db.add(loc)
             await db.commit()
             print("Default location created.")
         else:
             print("Default location already exists.")
+
 
 if __name__ == "__main__":
     asyncio.run(seed())

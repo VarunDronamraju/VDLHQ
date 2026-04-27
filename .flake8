@@ -1,4 +1,4 @@
 [flake8]
 max-line-length = 188
-exclude = .venv,__pycache__,scratch
+exclude = .venv,__pycache__,scratch,frontend,node_modules
 

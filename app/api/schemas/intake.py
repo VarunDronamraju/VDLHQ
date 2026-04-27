@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, model_validator
 
@@ -34,7 +34,7 @@ class InquiryRequest(BaseModel):
     client_profile: Optional[Dict[str, Any]] = None
     shoot_type: str
     dates: Optional[DatesSchema] = None
-    budget: Optional[Any] = None # Flexible budget for demo
+    budget: Optional[Any] = None  # Flexible budget for demo
     location_type: Optional[str] = None
     crew_size: Optional[int] = None
     requirements: Optional[str] = None

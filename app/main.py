@@ -65,12 +65,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/")
 async def root():
-    return {
-        "status": "online",
-        "system": "LocationHQ API",
-        "version": "v1.0",
-        "documentation": "/docs"
-    }
+    return {"status": "online", "system": "LocationHQ API", "version": "v1.0", "documentation": "/docs"}
 
 
 app.include_router(auth_router, prefix="/api/v1", tags=["auth"])

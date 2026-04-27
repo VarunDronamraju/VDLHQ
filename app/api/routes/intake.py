@@ -2,7 +2,6 @@ from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_current_user
 from app.api.schemas.intake import InquiryRequest, InquiryResponse
 from app.db.session import get_db
 from app.models.core import Client, Lead, LeadStatus, WorkflowState
@@ -47,14 +46,14 @@ async def submit_inquiry(
     # We include everything in intake_data to ensure it's logged and available for AI
     intake_data = {
         "shoot_type": body.shoot_type,
-        "dates": body.dates.model_dump() if body.dates and hasattr(body.dates, 'model_dump') else body.dates,
+        "dates": body.dates.model_dump() if body.dates and hasattr(body.dates, "model_dump") else body.dates,
         "budget": body.budget,
         "location_type": body.location_type,
         "crew_size": body.crew_size,
         "requirements": body.requirements,
         "contact": body.contact.model_dump(),
         "client_profile": body.client_profile,
-        "context": body.context, # CRITICAL: Store the location/production context
+        "context": body.context,  # CRITICAL: Store the location/production context
     }
 
     # ── Step 3: Create Lead ───────────────────────────────────────────────

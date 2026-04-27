@@ -26,28 +26,32 @@ async def get_dashboard(
     if not client_id and user.role != "ops":
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # Verify client exists
+    client_check = await db.execute(select(Client).where(Client.id == client_id))
+    if not client_check.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Client not found")
+
     # If ops is viewing, they might need a client_id in query, but for now we follow user's context
     if not client_id:
         return ClientDashboard(leads=[], bookings=[])
 
     # DEMO MODE: If using the fixed demo ID, show all leads for visibility
     is_demo = str(client_id) == "00000000-0000-0000-0000-000000000001"
-    
+
     # Fetch leads
     stmt = select(Lead).order_by(Lead.created_at.desc())
     if not is_demo:
         stmt = stmt.where(Lead.client_id == client_id)
-        
+
     leads_result = await db.execute(stmt)
     leads = leads_result.scalars().all()
 
     # Fetch bookings for this client
-    bookings_result = await db.execute(
-        select(Booking, Location.name.label("location_name"))
-        .join(Location)
-        .where(Booking.lead_id.in_([l.id for l in leads]))
-        .order_by(Booking.created_at.desc())
-    ) if leads else None
+    bookings_result = (
+        await db.execute(select(Booking, Location.name.label("location_name")).join(Location).where(Booking.lead_id.in_([lead.id for lead in leads])).order_by(Booking.created_at.desc()))
+        if leads
+        else None
+    )
 
     bookings_data = []
     if bookings_result:

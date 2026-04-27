@@ -64,8 +64,9 @@ AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_com
 
 async def test_connection() -> bool:
     import asyncio
-    from sqlalchemy import text
+
     import structlog
+    from sqlalchemy import text
 
     logger = structlog.get_logger("test_connection")
     max_retries = 5
@@ -80,13 +81,9 @@ async def test_connection() -> bool:
             if attempt == max_retries:
                 logger.error("Final database connection attempt failed", error=str(e))
                 raise e
-            
-            logger.warning(
-                f"Database connection attempt {attempt} failed, retrying...",
-                error=str(e),
-                next_retry_in=f"{retry_delay}s"
-            )
+
+            logger.warning(f"Database connection attempt {attempt} failed, retrying...", error=str(e), next_retry_in=f"{retry_delay}s")
             await asyncio.sleep(retry_delay)
             retry_delay *= 2  # Exponential backoff
-    
+
     return False
