@@ -257,3 +257,63 @@ async def test_llm_call_json_generic_failure(monkeypatch):
     monkeypatch.setattr(llm_client._client.chat.completions, "create", _boom)
     with pytest.raises(LLMFailure):
         await llm_client.call_json(messages=[{"role": "user", "content": "hi"}], system="return json")
+
+
+@pytest.mark.asyncio
+async def test_llm_call_fallback_to_ollama(monkeypatch):
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5:3b")
+    monkeypatch.setenv("TEST_OLLAMA_FALLBACK", "true")
+
+    async def _boom(**_kwargs):
+        raise groq.GroqError("Groq client failure simulation")
+
+    monkeypatch.setattr(llm_client._client.chat.completions, "create", _boom)
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": "ollama reply"}}
+
+    async def fake_post(self, url, json, **kwargs):
+        return FakeResponse()
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
+
+    result = await llm_client.call(
+        messages=[{"role": "user", "content": "ping"}],
+        system="reply pong",
+    )
+    assert result == "ollama reply"
+
+
+@pytest.mark.asyncio
+async def test_llm_call_json_fallback_to_ollama(monkeypatch):
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5:3b")
+    monkeypatch.setenv("TEST_OLLAMA_FALLBACK", "true")
+
+    async def _boom(**_kwargs):
+        raise RuntimeError("Groq JSON failure simulation")
+
+    monkeypatch.setattr(llm_client._client.chat.completions, "create", _boom)
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"message": {"content": '{"status": "ollama ok"}'}}
+
+    async def fake_post(self, url, json, **kwargs):
+        return FakeResponse()
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
+
+    result = await llm_client.call_json(
+        messages=[{"role": "user", "content": "ping"}],
+        system="reply pong",
+    )
+    assert result == {"status": "ollama ok"}
