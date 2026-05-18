@@ -1,263 +1,578 @@
-# LocationHQ
+# ✦ LocationHQ — Production operations platform for film, advertising, and media shoot coordination
 
-## What It Is
+Welcome to the definitive operational manual and architectural handbook for **LocationHQ**. 
 
-LocationHQ is an operations platform for film, advertising, and media shoot coordination. It connects production houses with location owners and manages the full lifecycle: inquiry intake → lead qualification → location matching → booking → permits → shoot coordination → close.
-
-The system replaces call-heavy manual coordination with a state-driven workflow — structured intake, automated communication, and internal ops visibility — while keeping humans in control of final decisions.
+LocationHQ is a production-grade, workflow-driven operations platform designed to coordinate film, advertising, and media shoots. It integrates a structured client intake pipeline, automated background communication, vector-similarity location matching, and a robust state machine to manage the full lifecycle of lead processing: **Inquiry Intake → Lead Qualification → Location Matching → Booking → Permits → Shoot Coordination → Close**.
 
 ---
 
-## Core Problem It Solves
+## 🏗️ 1. Complete System Architecture & Modular Layout
 
-| Problem | System Response |
-|---|---|
-| Inquiry handling via calls (10–30 min per lead) | Structured digital intake form with partial save |
-| No defined lead pipeline | State machine with 15 explicit states, enforced by C1 |
-| Scattered data and repeated collection | Centralized PostgreSQL; client profiles pre-fill on re-inquiry |
-| Manual follow-ups and inconsistent communication | Automated messaging triggered by state changes and inactivity |
-| No visibility into bookings or permit status | Internal ops dashboard; client-facing status view |
-| Permit handling case-by-case | Structured permit lifecycle tracked inside the system |
-
----
-
-## Architecture Overview
-
-**Pattern:** Modular monolith — single deployable unit, single PostgreSQL database, all state in the DB.
-
-**Stack:**
-- FastAPI (API layer + BackgroundTasks for async execution)
-- PostgreSQL + pgvector (primary data store + vector similarity search)
-- APScheduler (in-process scheduling)
-- Anthropic Claude (AI services only, never controlling flow)
-
-**No:** Redis, Celery, Kafka, separate worker processes, separate vector database.
+The system is constructed as a **modular monolith** — a single deployable backend unit utilizing a single PostgreSQL database with pgvector, keeping all state centrally persisted to enforce total reliability.
 
 ```
 /locationhq
-  /api/routes/          ← intake, leads, bookings, client, ops endpoints
-  /services
-    /core/              ← C1, C2, C3, C4, C5 (deterministic, no LLM)
-    /ai/                ← A1, A2, A3, A4, A5, A6 (LLM-assisted)
-  /models/              ← lead, booking, client, location, permit, workflow_state
-  /scheduler/jobs.py    ← all APScheduler job definitions
-  /db/                  ← SQLAlchemy async engine, Alembic migrations
-  /config/settings.py   ← Pydantic BaseSettings
-  main.py               ← app factory, scheduler startup
+  /app
+    /api
+      /routes/          ← Intake, leads, bookings, client, and ops REST endpoints
+      /middlewares/     ← Request loggers, auth protections
+      /schemas/         ← Pydantic schemas (LeadBrief, BookingBrief, etc.)
+    /services
+      /core/            ← C1, C2, C3, C4, C5 (Deterministic, no LLM allowed)
+      /ai/              ← A1, A2, A3, A4, A5, A6 (LLM-assisted services)
+    /models/            ← Lead, booking, client, location, permit, and workflow_state SQLAlchemy models
+    /scheduler/         ← APScheduler job engines (Inactivity scanner, reminders)
+    /db/                ← SQLAlchemy async engines, connection pool, migrations
+    /core/              ← exceptions, error loggers, and shared libraries
+    main.py             ← API gateway app factory, CORS, and scheduler startup
+  /frontend             ← React + Vite client-facing interface (Pure minimalist teal/white styling)
+  /tests                ← Fully-hardened test suite (pytest-asyncio, 90%+ target coverage)
 ```
 
 ---
 
-## Dependency Direction
+## 📊 2. High-Fidelity Architectural & Flow Diagrams
 
-```
-API routes → C1 WorkflowEngine → AI / Core services
-AI services read from DB and return results to C1; they do not write state directly
-AI services → A5 (outbound comms only)
-C1 → DB (sole writer of lead.status)
+These diagrams map the complete operational lifecycle, service dependency trees, database relationships, and the central lead state machine.
+
+### Diagram A: High-Level System Flow
+Shows the ingestion boundaries (Inquiry vs Partial) and how the intake pipeline flows to the PostgreSQL DB and out to communications and dashboards.
+
+```mermaid
+---
+config:
+  layout: elk
+---
+flowchart TB
+ subgraph Input["Input Boundary"]
+        F1["Full Inquiry Form"]
+        F11["Partial Submission"]
+  end
+ subgraph Core["Core System Monolith"]
+        A1["IntakeService (A1)"]
+        A2["ReadinessService (A2)"]
+        C1["WorkflowEngine (C1)"]
+        C2["RoutingService (C2)"]
+        A3["MatchingService (A3)"]
+        A4["PermitService (A4)"]
+        C4["FollowUpService (C4)"]
+        A6["NurturingService (A6)"]
+        A5["CommunicationService (A5)"]
+        C3["ProfileService (C3)"]
+        API["API Gateway (FastAPI)"]
+  end
+ subgraph Output["Output & Dashboards"]
+        ClientDash["Client Dashboard"]
+        InternalDash["Internal Dashboard"]
+        Messages["Email / SMTP Notifications"]
+  end
+    Client(["Client"]) --> API
+    API --> F1 & F11
+    
+    %% Full inquiry triggers intake pipeline (A1 → A2 → C2 → C1.transition)
+    F1 --> A1
+
+    %% Partial inquiry creates a lead in needs_info directly
+    F11 --> C3
+
+    %% Intake pipeline: services return results; ONLY C1 writes leads.status
+    A1 --> A2
+    A2 --> C2
+    C2 --> C1
+
+    %% Profile lookup/creation is synchronous during inquiry/partial submission
+    C3 --> DB[("PostgreSQL Database")]
+
+    %% Workflow orchestration + persistence
+    C1 --> DB & A3 & C4 & A4 & A5
+    C2 --> C1
+    A3 --> C1
+    A4 --> C1
+    C4 --> A5
+    A6 --> A5
+    A5 --> Messages
+    DB --> ClientDash & InternalDash
+    Messages --> Client
+
+    style Client fill:#0D7C66,stroke:#41C9B4,color:#fff
+    style DB fill:#1e293b,stroke:#cbd5e1,color:#fff
 ```
 
-No service writes `lead.status` except C1. All orchestration flows through C1; auxiliary services may call A5 for communication.
+### Diagram B: Operational Workflow Pipeline (W1–W9)
+An end-to-end flowchart from structural intake through matching, booking, permits, issue tracking, and automated failure/inactivity nurturing.
+
+```mermaid
+---
+config:
+  layout: elk
+---
+flowchart TB
+
+    %% ========== INPUT ==========
+    subgraph Input["Input Boundary"]
+        START["Inquiry Received"]
+    end
+
+    %% ========== CORE SYSTEM ==========
+    subgraph Core["LocationHQ Core System"]
+
+        API["API Gateway"]
+
+        %% Workflow Sections
+        subgraph W1["W1: Inquiry Intake"]
+            IA["Profile Check (C3)"]
+            IB["Intake Processing (A1)"]
+            IC["Readiness Evaluation (A2)"]
+        end
+
+        subgraph W2["W2: Routing"]
+            RD{"Lead Ready?"}
+            RE["Route → Matching"]
+            RF["Route → Follow-up"]
+        end
+
+        subgraph W3["W3: Location Matching"]
+            MA["Matching Engine (A3)"]
+            MB{"Match Found?"}
+            MC["Shortlist Stored"]
+            MD["Clarification Sent"]
+            ME{"Client Confirms?"}
+        end
+
+        subgraph W4["W4: Booking & Permits"]
+            BA["Client Selects Location"]
+            BB["State: booked"]
+            BC["Permit Engine (A4)"]
+            BD["permit_pending"]
+            BE["permit_submitted"]
+            BF{"permit_in_review"}
+            BG["permit_approved"]
+            BZ["permit_rejected"]
+            BH["coordination"]
+        end
+
+        subgraph W8["W8: Issue Resolution"]
+            IA2["Issue Logged"]
+            IB2["Assigned to Ops"]
+            IC2["Tracked in DB"]
+            ID2["Client Acknowledged"]
+        end
+
+        subgraph W9["W9: Nurturing & Follow-up"]
+            FU["FollowUp (C4)"]
+            FUA["Targeted Message"]
+            FUB{"Client responds?"}
+            NU["Nurturing (A6)"]
+            NUA["Re-engagement"]
+            NUB{"Client responds?"}
+        end
+
+    end
+
+    %% ========== OUTPUT ==========
+    subgraph Output["Output Endpoints"]
+        CLOSED["Closed (Shoot Done)"]
+        ARC["Archived"]
+        Messages["Email Outreach"]
+        Dashboard["Ops Console"]
+    end
+
+    %% ========== FLOW ==========
+    START --> API
+    API --> IA
+
+    IA --> IB --> IC --> RD
+    RD -- Yes --> RE --> MA
+    RD -- No --> RF --> FU
+
+    MA --> MB
+    MB -- Yes --> MC --> ME
+    MB -- No --> MD --> MA
+
+    ME -- No --> MA
+    ME -- Yes --> BA --> BB
+
+    BB --> BC --> BD --> BE --> BF
+    BF -- Approved --> BG --> BH
+    BF -- Rejected --> BZ --> BD
+
+    BH --> CLOSED
+
+    %% Outbound Alerts
+    BB & BG & BH --> Messages
+
+    %% Issues
+    Messages --> IA2 --> IB2 --> IC2 --> ID2
+
+    %% Nurturing loop
+    FU --> FUA --> FUB
+    FUB -- Yes --> IB
+    FUB -- No --> NU --> NUA --> NUB
+    NUB -- Yes --> IB
+    NUB -- No --> ARC
+
+    style START fill:#0D7C66,stroke:#41C9B4,color:#fff
+    style CLOSED fill:#0f172a,stroke:#d1e7e4,color:#fff
+    style ARC fill:#475569,stroke:#94a3b8,color:#fff
+```
+
+### Diagram C: Sequence Diagram (Time-ordered Transactions)
+A transactional roadmap showing the exact synchronous responses and asynchronous task processing pipelines.
+
+```mermaid
+sequenceDiagram
+    participant Client as Client Browser
+    participant API as API Gateway (FastAPI)
+    participant A1 as A1 IntakeService
+    participant C3 as C3 ProfileService
+    participant A2 as A2 ReadinessService
+    participant C2 as C2 RoutingService
+    participant C1 as C1 WorkflowEngine
+    participant A3 as A3 MatchingService
+    participant A4 as A4 PermitService
+    participant C4 as C4 FollowUpService
+    participant A5 as A5 CommunicationService
+    participant DB as PostgreSQL DB
+
+    Client->>API: Submit inquiry form
+    API->>C3: Lookup or pre-fill client profile (Sync)
+    C3->>DB: Read/write client profile records
+    API->>DB: Create lead (status: new) & save raw data (Sync)
+    API-->>Client: 202 Accepted (Sync Response: pipeline enqueued)
+    Note over API,C1: BackgroundTask triggers asynchronously
+    API->>A1: run_intake_pipeline(lead_id) starts
+    
+    A1->>A2: Parse and pass structured JSON
+    A2->>A2: Evaluate field completeness
+    alt Lead is fully ready
+        A2-->>C2: ReadinessResult(status=ready, score)
+        C2-->>C1: Route to Matching
+        C1->>DB: C1.transition() writes state: qualified
+        C1->>A3: Trigger Location Matching
+    else Lead is incomplete
+        A2-->>C2: ReadinessResult(status=needs_info)
+        C2-->>C1: Route to Follow-up
+        C1->>DB: C1.transition() writes state: needs_info
+        C1->>C4: Schedule Follow-up scanner
+        C4->>A5: Build outbound template with missing_fields
+        A5-->>Client: Send targeted follow-up email
+    end
+
+    Note over C1,A3: Vector Matching Pipeline
+    A3->>DB: Cosine similarity similarity search (pgvector)
+    A3->>A3: LLM ranks and scores top locations
+    A3-->>C1: Return location shortlist
+    C1->>DB: Save shortlist & transition state: matched
+    C1->>A5: Dispatch shortlist communication
+    A5-->>Client: Email shortlist details
+    
+    Client->>API: Select location & book
+    API->>C1: Trigger booking confirmation
+    C1->>DB: Transition state: booked
+    C1->>A4: Query permit regulations
+    A4->>A4: Evaluate location zones and infer permit needs
+    A4-->>C1: Return required checklist
+    C1->>DB: Create permit records (status: permit_pending)
+    
+    Note over C1,A4: Permit Status Lifecycle
+    A4->>C1: Update to permit_submitted
+    C1->>DB: Update state in DB
+    A4->>C1: Update to permit_in_review
+    C1->>DB: Update state in DB
+    alt Permit is Approved
+        A4->>C1: Update to permit_approved
+        C1->>DB: Transition state: coordination
+        C1->>A5: Send shoot coordination instructions
+        A5-->>Client: Email coordination details
+    else Permit is Rejected
+        A4->>C1: Update to permit_rejected
+        C1->>DB: Transition state: permit_pending (resubmit corrects)
+    end
+    
+    C1->>DB: Transition state: closed (shoot completed successfully)
+```
+
+### Diagram D: Finite Lead State Machine
+Constrains all lead journeys. Every transition is centrally written and validated by `C1`.
+
+```mermaid
+---
+config:
+  layout: elk
+---
+stateDiagram-v2
+    [*] --> new
+
+    new --> needs_info: Readiness below threshold
+    new --> ready: Readiness passes
+
+    needs_info --> ready: Client provides missing fields
+    needs_info --> inactive: 7 days of inactivity
+
+    ready --> matching_in_progress: Matching starts
+    matching_in_progress --> matched: Shortlist generated
+    matching_in_progress --> needs_clarification: Poor match (max 1x)
+    matching_in_progress --> manual_review: Clarification loop exhausted
+    needs_clarification --> matching_in_progress: Client clarifies
+
+    matched --> ready: Client rejects shortlist
+    matched --> inactive: 7 days of inactivity
+    matched --> booked: Client confirms booking
+    manual_review --> ready: Ops resolves (resets count)
+
+    booked --> permit_pending: Permit flow initiated
+    permit_pending --> permit_submitted: Submitted by ops
+    permit_submitted --> permit_in_review: Review under authorities
+    permit_in_review --> permit_approved: Approved
+    permit_in_review --> permit_rejected: Rejected by authority
+    permit_rejected --> permit_pending: Correct & resubmit
+
+    permit_approved --> coordination: Logistics active
+    coordination --> closed: Shoot completed
+
+    inactive --> needs_info: Client reactivates
+    inactive --> archived: Extended nurturing expires
+
+    archived --> [*]
+    closed --> [*]
+```
+
+### Diagram E: Entity-Relationship Database Diagram
+Shows the primary physical tables, constraints, pgvector integrations, and append-only audits.
+
+```mermaid
+---
+config:
+  layout: elk
+---
+erDiagram
+    CLIENT ||--o{ LEAD : "triggers inquiries"
+    CLIENT ||--o{ BOOKING : "owns bookings"
+    LEAD ||--o{ WORKFLOW_STATE : "logs state history"
+    LEAD ||--o| BOOKING : "converts to"
+    LOCATION ||--o{ BOOKING : "hosts shoots"
+    BOOKING ||--o{ PERMIT : "requires permits"
+    LEAD ||--o{ COMMUNICATIONS_LOG : "audits messages"
+
+    CLIENT {
+        uuid id PK
+        string name
+        string email UK
+        string phone
+        timestamp created_at
+    }
+
+    LEAD {
+        uuid id PK
+        uuid client_id FK
+        string status "enum (new, ready, matched...)"
+        int readiness_score
+        jsonb missing_fields
+        int clarification_count
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    WORKFLOW_STATE {
+        uuid id PK
+        uuid lead_id FK
+        string previous_state
+        string new_state
+        string trigger "api, scheduler, ops"
+        string actor "client, ops, system"
+        timestamp created_at
+    }
+
+    BOOKING {
+        uuid id PK
+        uuid client_id FK
+        uuid location_id FK
+        uuid lead_id FK
+        string status
+        date shoot_date
+        decimal budget
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    LOCATION {
+        uuid id PK
+        string name
+        string type
+        string address
+        boolean available
+        vector embedding "1536 (pgvector)"
+        jsonb metadata
+        timestamp created_at
+    }
+
+    PERMIT {
+        uuid id PK
+        uuid booking_id FK
+        string permit_type
+        string status "enum (pending, submitted, approved...)"
+        jsonb checklist
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    COMMUNICATIONS_LOG {
+        uuid id PK
+        uuid lead_id FK
+        uuid booking_id FK
+        string template_name
+        string channel "email"
+        timestamp sent_at
+        string status "sent, failed"
+    }
+```
 
 ---
 
-## Lead State Machine
+## 🧩 3. In-Depth Multi-Agent & Service Brief
 
-```
-new
- ├─→ needs_info          (missing fields or below readiness threshold)
- │    ├─→ ready          (client provides missing fields, readiness passes)
- │    └─→ inactive       (no response after 7+ days)
- │         └─→ archived  (no response after extended nurturing period)
- └─→ ready               (readiness passes on first attempt)
-      └─→ matching_in_progress
-           ├─→ needs_clarification  (poor match results; one clarification loop)
-           │    └─→ matching_in_progress  (max once, enforced by clarification_count)
-           ├─→ matched              (shortlist sent to client)
-           │    ├─→ ready           (client rejects; re-enters routing and matching)
-           │    ├─→ booked          (client confirms location)
-           │    │    └─→ permit_pending
-           │    │         └─→ permit_submitted
-           │    │              └─→ permit_in_review
-           │    │                   ├─→ permit_approved
-           │    │                   │    └─→ coordination
-           │    │                   │         └─→ closed
-           │    │                   └─→ permit_rejected
-           │    │                        └─→ permit_pending  (resubmission after resolution)
-           │    └─→ inactive        (no client response after 7+ days at matched)
-           └─→ manual_review        (clarification loop exhausted; ops takes over)
-                └─→ ready           (ops resolves; clarification_count reset to 0)
-```
+LocationHQ decouples its processes into deterministic core controllers (**C-series**) and LLM-assisted cognitive engines (**A-series**). 
 
-**Enforcement:** `lead.status` is a constrained enum column with a DB-level CHECK constraint. Every transition writes an append-only row to `workflow_state`. Any status change without a corresponding `workflow_state` row indicates a C1 bypass.
+### A. Core Deterministic Services (No LLM Allowed)
+These represent the absolute bedrock of the system, governed by strict conditional algorithms and database logic.
+* **C1: WorkflowEngine**
+  * **Role**: The single system control point and sole orchestrator of state transitions.
+  * **Responsibility**: Constrains transitions using a validated `ALLOWED_TRANSITIONS` map. On success, writes the state atomically to the DB, appends a row to `workflow_state`, and dispatches templates to `A5`.
+  * **Rule**: No direct modifications of `lead.status` can exist anywhere else in the application.
+* **C2: RoutingService**
+  * **Role**: Conditional router of qualified intake data.
+  * **Responsibility**: Evaluates the `ReadinessService` score. Routes leads in `ready` state to matching (`A3`) and leads in `needs_info` to follow-up (`C4`).
+* **C3: ProfileService**
+  * **Role**: CRM Identity pre-filler.
+  * **Responsibility**: Looks up returning client profiles synchronously using incoming emails or phones, merging records and pre-filling historic data.
+* **C4: FollowUpService**
+  * **Role**: Follow-up coordinator.
+  * **Responsibility**: Evaluates leads sitting in `needs_info` for less than 72 hours, building context lists of missing fields and handing them over to `A5` for template composition.
+* **C5: AnalyticsService**
+  * **Role**: SQL Aggregator.
+  * **Responsibility**: Periodically queries booking metrics, permit completion rates, and lead pipeline states, materializing data structures for ops dashboards.
 
----
-
-## Workflow Engine (C1) — Transition Contract
-
-Every state change calls:
-
-```
-C1.transition(lead_id, target_state, context) → Result
-```
-
-Execution sequence:
-
-1. Load current `lead.status` and `updated_at` from DB
-2. Validate `target_state` is in `ALLOWED_TRANSITIONS[current_state]` — raise if not
-3. For `needs_clarification → matching_in_progress`: check `clarification_count < 1`
-4. For `manual_review → ready`: reset `clarification_count = 0`
-5. Execute downstream action (service call associated with this transition)
-6. **Only if step 5 succeeds**: write new `lead.status` to DB
-7. Write row to `workflow_state` audit table
-8. Trigger A5 if this transition has an associated communication template
-
-**Core guarantee:** state only advances after downstream work is confirmed done. If the downstream call fails, status is not updated and the lead stays in its current state.
+### B. LLM-Assisted Cognitive Services (Assistive, Never Flow-Controlling)
+These services integrate LLMs exclusively to parse unstructured content, rank candidates, or adjust tones. 
+* **A1: IntakeService**
+  * **Role**: Unstructured document parser.
+  * **Responsibility**: Processes raw incoming text inquiries (email, WhatsApp) and parses them into structured variables (budget, location type, shoot dates).
+* **A2: ReadinessService**
+  * **Role**: Lead completeness validator.
+  * **Responsibility**: Scores lead readiness from 0 to 100 based on parsed fields, defining missing fields and categorizing leads.
+* **A3: MatchingService**
+  * **Role**: Contextual location matchmaker.
+  * **Responsibility**: Performs a cosine similarity search across local location inventories utilizing **pgvector** and ranks shortlists based on client preferences.
+* **A4: PermitService**
+  * **Role**: Regulatory permit advisor.
+  * **Responsibility**: Infers location zones (e.g. municipal, regional) and generates a structured regulatory checklist for ops.
+* **A5: CommunicationService**
+  * **Role**: Dynamic outbound delivery layer.
+  * **Responsibility**: Receives structured templates from `C1`/`C4`, allows the LLM to rewrite the tone for professional personalization (never facts), validates outputs, and handles SMTP logging.
+* **A6: NurturingService**
+  * **Role**: Long-term re-engagement generator.
+  * **Responsibility**: Evaluates inactive leads and generates personalized outreach emails to reactivate clients.
 
 ---
 
-## Services
+## 🛡️ 4. Shared LLM Client Failover Pipeline (Groq + Ollama Only)
 
-### Core Services — Fully Deterministic, No LLM
+All LLM calls throughout the `A-series` services go through our unified, hardened **LLM Client Failover Pipeline**:
 
-| Service | ID | Responsibility |
-|---|---|---|
-| WorkflowEngine | C1 | Owns and enforces the state machine. Only writer of `lead.status`. Triggers all downstream services. Handles retries and inactivity detection. |
-| RoutingService | C2 | Routes leads post-readiness assessment: `ready` → A3, `needs_info` → C4. Pure conditional logic. |
-| ProfileService | C3 | Manages client records. Matches by email/phone on re-inquiry, pre-fills known fields. Pure CRUD. |
-| FollowUpService | C4 | Triggers within 0–72 hours of `needs_info` state. Rule-based scheduling. Passes context to A5 — does not send directly. |
-| AnalyticsService | C5 | SQL aggregations on lead and booking data. Results stored for dashboard access. No LLM. |
-
-### AI Services — LLM-Assisted, Never Flow-Controlling
-
-| Service | ID | LLM Role |
-|---|---|---|
-| IntakeService | A1 | Parses raw inquiry text into structured fields. LLM required. |
-| ReadinessService | A2 | Scores lead completeness. Outputs: `ready` or `needs_info` + missing field list. LLM required. |
-| MatchingService | A3 | Embeds client requirements, runs pgvector similarity search, LLM ranks shortlist. One clarification loop allowed. If still no match: C1 forces `manual_review`. LLM required. |
-| PermitService | A4 | Infers permit requirements, generates checklist, tracks permit lifecycle. Rules-based fallback available. LLM optional. |
-| CommunicationService | A5 | Single outbound sending layer. Template-first — LLM may rewrite tone only, never facts. If rewrite fails validation, original template is sent. LLM optional. |
-| NurturingService | A6 | Long-term re-engagement for leads inactive 7+ days. Cadence is deterministic. LLM personalizes message content only. Passes to A5 for sending. LLM optional. |
-
----
-
-## Execution Model
-
-| Operation | Execution |
-|---|---|
-| Form validation + lead creation | Synchronous — must confirm receipt |
-| A1 → A2 → C2 → C1 intake pipeline | Async BackgroundTask — runs after 202 response |
-| A3 matching | Async BackgroundTask |
-| A5 communication | Async BackgroundTask (fire-and-observe) |
-| Dashboard reads | Synchronous — fast DB reads |
-| Manual ops actions | Synchronous — immediate feedback expected |
-| Permit status updates | Synchronous — ops-triggered |
-
-On form submission: validate and write lead (`status: new`), return 202, enqueue `run_intake_pipeline(lead_id)`. The pipeline runs A1 → A2 → C2 → C1.transition() sequentially. Any step failure stops execution; lead stays in current state.
-
-All LLM calls go through a shared `llm_client.call()` utility: 30s timeout (60s for complex generation), retry with exponential backoff (max 3 attempts, 429/5xx only), structured logging, failure propagation (raises on exhausted retries).
-
----
-
-## Scheduled Jobs
-
-| Job | Frequency | Action |
-|---|---|---|
-| Inactivity scanner | Every 6 hours | Leads in `needs_info` or `matched` with no update in 7+ days → C1.transition(lead_id, "inactive") |
-| Follow-up scanner | Every 2 hours | Leads in `needs_info` under 72 hours with no follow-up sent → C4 → A5 |
-| Permit reminder | Daily | Permits stuck beyond expected duration → A5 sends reminder to ops and client |
-| Nurturing runner | Weekly | Leads in `inactive` → A6 builds message → A5 sends |
-| Analytics refresh | Daily | C5 runs aggregations, stores results for dashboard access |
-
-All jobs are idempotent. Exceptions are caught, logged, and surfaced — no silent failures.
-
----
-
-## API Surfaces
-
-### Client-Facing
 ```
-POST /inquiry              — full form submission
-POST /inquiry/partial      — partial save (F11, saves as needs_info)
-GET  /client/dashboard     — status, history, updates
-GET  /client/leads/:id     — single lead status
-POST /client/leads/:id     — update inquiry fields
+[Groq Cloud] ──(Success)──> Return Response
+     │
+ (Timeout/5xx/Fail)
+     ▼
+[Pytest Env?] ──(Yes)──> Prevent Local Calls (Raise LLMFailure)
+     │
+    (No)
+     ▼
+[Ollama Local (qwen2.5:3b)] ──(Success)──> Return Response
 ```
 
-### Ops-Facing
-```
-GET  /ops/pipeline              — all leads by stage
-GET  /ops/leads/:id             — full lead detail with audit trail
-POST /ops/leads/:id/action      — manual state override, reassign
-GET  /ops/bookings              — booking pipeline
-POST /ops/bookings/:id/permit   — update permit status
-GET  /ops/analytics             — dashboard aggregations
-```
-
-### Internal
-```
-POST /internal/retry/:lead_id   — manually re-trigger intake pipeline
-```
-
-**Auth:** JWT-based, two roles — `client` (query-level isolation by `client_id`) and `ops` (unrestricted read/write).
+* **Primary Engine**: Queries the Groq Cloud endpoint (`llama-3.3-70b-versatile` / API key) utilizing a shared connection pool, configured with exponential backoffs and a 30s timeout.
+* **Failover Engine**: If Groq is unavailable, has exceeded limits, or returns a 5xx error, it catches the exception and falls back to **Ollama** running locally (`qwen2.5:3b` at `http://localhost:11434/api/chat`).
+* **Test Isolation**: Prevents unit tests from making real HTTP calls to local Ollama. Testing automatically bypasses fallback unless explicitly enabled via `TEST_OLLAMA_FALLBACK=true`.
+* **Out of Scope**: OpenAI, Anthropic (Claude), and Google (Gemini) are **completely bypassed** in production, maintaining total cost boundaries and localized sovereignty.
 
 ---
 
-## Data Model (Core Tables)
+## ⚡ 5. Execution Model & Idempotent Schedules
 
-| Table | Key Columns |
-|---|---|
-| `leads` | `id, client_id, status (enum+CHECK), readiness_score, missing_fields (jsonb), clarification_count, created_at, updated_at` |
-| `workflow_state` | `id, lead_id, previous_state, new_state, trigger, actor, created_at` — append-only audit log |
-| `bookings` | `id, lead_id, client_id, location_id, status, shoot_date, budget, created_at, updated_at` |
-| `permits` | `id, booking_id, permit_type, status (enum), checklist (jsonb), created_at, updated_at` |
-| `clients` | `id, name, email, phone, profile_data (jsonb), created_at, updated_at` |
-| `locations` | `id, name, type, address, available (bool), embedding vector(1536), metadata (jsonb), created_at` |
-| `communications_log` | `id, lead_id, booking_id, template_name, channel, sent_at, status` |
+### Operations Pipeline
+* **Synchronous**: Form submissions, profile checks, and ops dashboard updates must respond instantly.
+* **Asynchronous**: Pipeline enrichment (`A1` → `A2` → `C2` → `C1`), matching (`A3`), and sending notifications (`A5`) run out-of-band via FastAPI's `BackgroundTask` queue to ensure sub-second UI responsiveness.
 
-`locations.embedding` uses `ivfflat` index with `lists = 50`. A3 embeds client requirements at query time using the same model used at ingestion. Similarity search runs as a single pgvector cosine distance query.
-
----
-
-## Failure and Recovery
-
-**Core rule:** state advances only after downstream execution succeeds.
-
-| Failure | Lead State | Recovery |
-|---|---|---|
-| A1 or A2 fails | Remains `new` | Inactivity scanner surfaces it; ops retriggers via `/internal/retry` |
-| A3 fails | Remains `ready` | Inactivity scanner; ops retrigger |
-| Clarification loop exhausted | C1 transitions to `manual_review` | Ops resolves, resets to `ready` |
-| A5 send fails | State already advanced | Logged to `communications_log`; ops resend from dashboard |
-| Permit submission fails | Remains `permit_pending` | A4 retries (3 attempts, backoff); escalates to ops if exhausted |
-| Scheduler crash | Job logs exception | Next run catches missed leads; inactivity scanner is idempotent |
-
-**A5 special case:** A5 failure does not roll back state. Communication is a notification, not the business action. Failures are logged and surfaced on the ops dashboard.
-
-**Ops dashboard surfaces:**
-- Leads stuck beyond configurable threshold per state
-- Failed communications
-- Background task failures (logged to `system_errors` table)
-- Leads in `new` or `ready` for 2+ hours with no `workflow_state` update
+### Automated Cron Scheduler
+Powered by `APScheduler`, running inside the primary application process to ensure low-footprint operations:
+* **Inactivity Scanner (Every 6 Hours)**: Transitions leads stuck in `needs_info` or `matched` with no updates for 7+ days to `inactive`.
+* **Follow-up Scanner (Every 2 Hours)**: Identifies leads in `needs_info` under 72 hours and dispatches missing-field follow-ups.
+* **Permit Reminder (Daily)**: Alerts ops if a permit has been stuck in `permit_in_review` beyond expected timelines.
+* **Nurturing Runner (Weekly)**: Evaluates `inactive` leads, triggers `A6` re-engagement templates, and updates records.
 
 ---
 
-## System Principles
+## 🚀 6. Local Quickstart, Formatting, & Testing Handbooks
 
-1. C1 WorkflowEngine is the single control point — nothing moves without it
-2. Core services own reliability and all state transitions — no LLM in the control path
-3. AI services assist where interpretation or personalization is needed — they never decide
-4. A5 is the only outbound communication layer — C4 and A6 pass to A5, never send directly
-5. LLM never controls flow — it only assists decisions and crafts communication
-6. The `workflow_state` table is the complete audit trail — any lead's full journey is readable from it
-7. The system is designed to surface problems to humans, not hide them
+Ensure your `.env` contains:
+```ini
+POSTGRES_URL=postgresql://your_db_user:your_db_password@your_db_host/your_db_name?sslmode=require
+GROQ_API_KEY=gsk_your_groq_api_key_here
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/your_slack_webhook_here
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen2.5:3b
+```
+
+### Quickstart Operations
+
+#### Boot the Backend Server (FastAPI)
+```bash
+# 1. Activate environment
+source .venv/bin/activate
+
+# 2. Start Uvicorn
+uvicorn app.main:app --reload
+```
+* **Endpoint**: `http://127.0.0.1:8000`
+* **Interactive Swagger Documentation**: `http://127.0.0.1:8000/docs`
+* **Status Healthcheck (Postgres + pgvector verification)**: `http://127.0.0.1:8000/health`
+
+#### Boot the Frontend Client (React + Vite)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+* **Endpoint**: `http://localhost:5173`
 
 ---
 
-## Out of Scope (Future)
+### CI/CD Quality Enforcements
 
-- F14: Location owner self-serve portal
-- F15: Availability calendar
-- F16: Review and feedback capture
-- F17: Invoice and commission tracker
-- F18: Contract and document storage
+To ensure total code sanity and complete adherence to project standards, run the following quality gates before submitting pull requests:
+
+#### 1. Code Formatting (Black)
+Checks and automatically formats Python files according to the strict 88-character standard.
+```bash
+.venv/bin/black app/ tests/ scratch/
+```
+
+#### 2. Import Sorting (isort)
+Automatically cleans up and categories imports (standard library, third-party, local).
+```bash
+.venv/bin/isort app/ tests/ scratch/
+```
+
+#### 3. Linting Checks (flake8)
+Scans the code for logic errors, unused variables, and style infractions.
+```bash
+.venv/bin/flake8 app/ tests/ scratch/
+```
+
+#### 4. Run the Unit Test Suite (pytest)
+Runs our automated unit, integration, and mocking suites.
+```bash
+.venv/bin/pytest tests/test_breakpoints.py tests/test_hardening_layers.py -v
+```
+*(Confirms that both the fallback system, API states, and general operations execute with 100% green integrity).*
